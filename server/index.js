@@ -1,37 +1,38 @@
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const tesseract = require('tesseract.js');
+const Tesseract = require('tesseract.js');
 
 const app = express();
-
 app.use(cors());
 
-const upload = multer();
-
-const extractTextFromImage = async (imageBuffer) => {
-    try {
-        const { data: { text } } = await tesseract.recognize(imageBuffer);
-        return text;
-    } catch (error) {
-        throw new Error(`An error occurred: ${error.message}`);
-    }
-};
+// Configure multer for file uploads (store in memory)
+const upload = multer({ storage: multer.memoryStorage() });
 
 app.post('/extract-text', upload.single('file'), async (req, res) => {
     if (!req.file) {
+        console.log('No file uploaded');
         return res.status(400).json({ error: 'No file uploaded' });
     }
 
     try {
-        const extractedText = await extractTextFromImage(req.file.buffer);
-        res.json({ extracted_text: extractedText });
+        console.log('File received:', req.file.originalname);
+
+        // Extract text using Tesseract.js
+        const { data: { text } } = await Tesseract.recognize(req.file.buffer, 'eng', {
+            logger: m => console.log(m) // Logs progress in the server console
+        });
+
+        console.log('Extracted Text:', text);
+        res.json({ extracted_text: text });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error during text extraction:', error);
+        res.status(500).json({ error: `An error occurred: ${error.message}` });
     }
 });
 
-const PORT = process.env.PORT || 5000;
+// Start the server
+const PORT = 5000;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
