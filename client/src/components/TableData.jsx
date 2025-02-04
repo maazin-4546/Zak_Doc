@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import jsPDF from "jspdf";
 import 'jspdf-autotable';
 import * as XLSX from "xlsx";
-import { Receipt_Details } from "../../../lib/data";
+import { Receipt_Details } from "../../lib/data";
 
 
 const Table_Data = () => {
