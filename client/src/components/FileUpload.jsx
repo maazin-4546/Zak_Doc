@@ -2,22 +2,47 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 const ImageUpload = () => {
-
     const [file, setFile] = useState(null);
     const [extractedText, setExtractedText] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/svg+xml'];
+    const maxSize = 2 * 1024 * 1024; // 2MB
+
+    const validateFile = (file) => {
+        if (!file) {
+            setError('Please select an image file.');
+            return false;
+        }
+        if (!allowedTypes.includes(file.type)) {
+            setError('Invalid file type. Allowed types: PNG, JPG, JPEG, GIF, SVG.');
+            return false;
+        }
+        if (file.size > maxSize) {
+            setError('File size exceeds 2MB.');
+            return false;
+        }
+        setError(null); // Clear errors if valid
+        return true;
+    };
+
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
-        setFile(selectedFile);
+        if (validateFile(selectedFile)) {
+            setFile(selectedFile);
+        } else {
+            setFile(null);
+        }
     };
 
     const handleDrop = (event) => {
         event.preventDefault();
         const droppedFile = event.dataTransfer.files[0];
-        if (droppedFile) {
+        if (validateFile(droppedFile)) {
             setFile(droppedFile);
+        } else {
+            setFile(null);
         }
     };
 
@@ -29,7 +54,7 @@ const ImageUpload = () => {
         e.preventDefault();
 
         if (!file) {
-            setError('Please select an image file.');
+            setError('Please select a valid image file before submitting.');
             return;
         }
 
@@ -89,7 +114,7 @@ const ImageUpload = () => {
                                         <span className="font-semibold">Click to upload</span> or drag and drop
                                     </p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        SVG, PNG, JPG or GIF (MAX. 800x400px)
+                                        PNG, JPG, JPEG, GIF, SVG (Max: 2MB)
                                     </p>
                                 </div>
                             ) : (
@@ -118,21 +143,19 @@ const ImageUpload = () => {
                         </label>
                     </div>
 
+                    {error && (
+                        <p className="mt-2 text-red-500 text-sm text-center">{error}</p>
+                    )}
+
                     <button
                         type="submit"
-                        className={`w-full cursor-pointer py-2 px-4 text-white font-medium rounded-lg transition ${loading
-                            ? 'bg-blue-300 cursor-not-allowed'
-                            : 'bg-blue-500 hover:bg-blue-600'
+                        className={`w-full cursor-pointer py-2 px-4 text-white font-medium rounded-lg transition ${loading ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
                             }`}
                         disabled={loading}
                     >
                         {loading ? 'Extracting...' : 'Extract'}
                     </button>
                 </form>
-
-                {error && (
-                    <p className="mt-4 text-red-500 text-sm text-center">{error}</p>
-                )}
 
                 {extractedText && (
                     <div className="mt-6 p-4 bg-gray-100 rounded-lg">

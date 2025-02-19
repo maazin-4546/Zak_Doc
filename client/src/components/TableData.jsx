@@ -146,7 +146,7 @@ const Table_Data = () => {
 
                         <table
                             ref={tableRef}
-                            className="w-full text-sm text-left text-gray-800 bg-white rounded-lg shadow-2xl overflow-hidden border-collapse transform transition-transform duration-300"
+                            className="w-full text-sm text-left text-gray-800 bg-white rounded-lg shadow-lg overflow-hidden border-collapse transform transition-transform duration-300"
                         >
                             <thead className="text-xs font-bold uppercase bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg">
                                 <tr>

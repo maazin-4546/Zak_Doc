@@ -1,3 +1,5 @@
+// ! This is the working code using tesseract (integrated with UI)
+
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -31,7 +33,6 @@ app.post('/extract-text', upload.single('file'), async (req, res) => {
     }
 });
 
-// Start the server
 const PORT = 5000;
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
