@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 
 uploads
+
+google_api_credentials.json
+
+.env
