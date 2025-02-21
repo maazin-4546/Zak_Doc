@@ -1,17 +1,18 @@
-import React from 'react'
-import FileUpload from './components/FileUpload'
+// import FileUpload from './components/FileUpload'
 import Table_Data from './components/TableData'
 import Navbar from './components/Navbar'
 import InvoiceExtractor from './components/Extraction_API'
+import Table_DB from './components/Table_DB'
 
 const App = () => {
   return (
     <div className='bg-gradient-to-br from-blue-50 to-blue-100'>
       <Navbar />
-      {/* <FileUpload /> */}
       <InvoiceExtractor/>
+      <Table_DB/>
 
-      <Table_Data />
+      {/* <FileUpload /> */}
+      {/* <Table_Data /> */}
     </div>
   )
 }

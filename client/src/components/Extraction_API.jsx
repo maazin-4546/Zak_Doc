@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 
 const InvoiceExtractor = () => {
@@ -51,7 +51,7 @@ const InvoiceExtractor = () => {
     return (
         <div className="mt-14 flex flex-col items-center justify-center min-h-screen p-6">
             <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-lg text-center">
-                <h2 className="text-2xl font-bold text-[#1A56DB] mb-4">Invoice Data Extraction</h2>
+                <h2 className="text-2xl font-bold text-cyan-700 mb-4">Invoice Data Extraction</h2>
 
                 <input
                     type="file"
@@ -76,7 +76,7 @@ const InvoiceExtractor = () => {
 
                 <button
                     onClick={handleUpload}
-                    className={`w-full mt-6 cursor-pointer py-2 px-4 text-white font-medium rounded-lg transition ${loading ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
+                    className={`w-full mt-6 cursor-pointer py-2 px-4 text-white font-medium rounded-lg transition ${loading ? 'bg-cyan-600 cursor-not-allowed' : 'bg-cyan-700 hover:bg-cyan-600'
                         }`}
                     disabled={loading}
                 >

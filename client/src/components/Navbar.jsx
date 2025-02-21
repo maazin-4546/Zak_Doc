@@ -23,7 +23,7 @@ const Navbar = () => {
         <nav
             className={`fixed top-0 w-full z-20 transition-all duration-300 ${isScrolled
                     ? "bg-white shadow-lg backdrop-blur-md"
-                    : "bg-gradient-to-r from-blue-500 to-indigo-600"
+                    : "bg-gradient-to-r from-cyan-600 to-cyan-700"
                 }`}
         >
             <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
