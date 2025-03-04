@@ -10,11 +10,10 @@ const Table_DB = () => {
 
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [currentPage, setCurrentPage] = useState(1);
-    // const [searchQuery, setSearchQuery] = useState("");
     const [invoices, setInvoices] = useState([]);
     const [searchInput, setSearchInput] = useState("");
 
-    // backend Api Call 
+    //* backend Api Call 
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -28,7 +27,7 @@ const Table_DB = () => {
     }, []);
 
 
-    // seach query
+    //* seach query
     const filteredRows = invoices.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
     const searchedRows = filteredRows.filter((invoice) => {
@@ -36,48 +35,148 @@ const Table_DB = () => {
         return vendorName.includes(searchInput.toLowerCase());
     });
 
-    // Ensure we respect the filter limit (including null values)
     const displayedRows = searchedRows.slice(0, rowsPerPage);
 
-    // Handle export logic
+    //* Handle export logic
     const handleExport = (e) => {
         const exportFormat = e.target.value;
-        if (exportFormat === "Excel") exportToExcel();
-        else if (exportFormat === "PDF") exportToPDF(tableRef);
-        else if (exportFormat === "Word") exportToWord();
+
+        if (exportFormat === "Excel") {
+            exportToExcel();
+        } else if (exportFormat === "PDF") {
+            if (tableRef?.current) {
+                exportToPDF(tableRef.current);
+            } else {
+                console.error("Table reference is not available");
+            }
+        } else if (exportFormat === "Word") {
+            exportToWord();
+        }
     };
 
     const exportToPDF = () => {
         const doc = new jsPDF({
-            orientation: 'landscape',
-            unit: 'pt',
-            format: 'A4',
+            orientation: "landscape",
+            unit: "pt",
+            format: "A4",
         });
 
-        doc.setFontSize(18);
-        doc.text('Patients List', 40, 40);
+        const table = document.getElementById("table_data");
 
+        const headers = [];
+        const data = [];
+
+        // Extract headers
+        table.querySelectorAll("thead tr th").forEach((th) => {
+            headers.push(th.innerText);
+        });
+
+        // Extract rows
+        table.querySelectorAll("tbody tr").forEach((tr) => {
+            const rowData = [];
+            tr.querySelectorAll("td").forEach((td, index) => {
+                let text = td.innerText.trim();
+                
+                if ([6, 7, 8].includes(index)) { 
+                    text = text.replace(/₹/g, "₹ "); 
+                }
+
+                rowData.push(text);
+            });
+            data.push(rowData);
+        });
 
         doc.autoTable({
-            html: tableRef.current,
+            head: [headers],
+            body: data,
             startY: 60,
-            theme: 'striped',
-            headStyles: { fillColor: [33, 150, 243] },
+            theme: "striped",
             styles: {
-                cellPadding: 8,
-                fontSize: 10,
-                halign: 'center',
-                valign: 'middle',
+                cellPadding: 4,
+                fontSize: 6,
+                halign: "left",
+                valign: "middle",
+            },
+            columnStyles: {
+
+                6: { halign: "left" }, // Unit Amount column aligned right
+                7: { halign: "left" }, // Tax Amount column aligned right
+                8: { halign: "left" }, // Total column aligned right
             },
         });
 
-        doc.save('Invoice_Details.pdf');
+        doc.save("Invoice_Details.pdf");
     };
 
     const exportToExcel = () => {
-        const worksheet = XLSX.utils.table_to_sheet(tableRef.current);
+        if (!tableRef.current) return;
+
+        // Create a new workbook and worksheet
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Patients List");
+        const worksheet = XLSX.utils.aoa_to_sheet([]);
+
+        // Extract headers
+        const headers = [
+            "Invoice",
+            "Date",
+            "Company Name",
+            "Vendor Name",
+            "Products",
+            "Quantity",
+            "Unit Amount",
+            "Tax Amount",
+            "Total",
+        ];
+        XLSX.utils.sheet_add_aoa(worksheet, [headers], { origin: "A1" });
+
+        // Extract table data
+        const tableRows = Array.from(tableRef.current.querySelectorAll("tbody tr")).map((row) => {
+            const cells = row.querySelectorAll("td");
+
+            // Extract products, quantity, and unit amount separately
+            const products = [];
+            const quantities = [];
+            const unitAmounts = [];
+
+            // Get product details from the Products column
+            const productListItems = cells[4]?.querySelectorAll("li");
+            productListItems?.forEach((li, idx) => {
+                products.push(li.textContent.trim());
+                quantities.push(cells[5]?.querySelectorAll("div")[idx]?.textContent.trim() || "0");
+                unitAmounts.push(cells[6]?.querySelectorAll("div")[idx]?.textContent.trim() || "₹0");
+            });
+
+            return [
+                cells[0]?.textContent.trim() || "null",
+                cells[1]?.textContent.trim() || "null",
+                cells[2]?.textContent.trim() || "null",
+                cells[3]?.textContent.trim() || "null",
+                products.join("\n"),
+                quantities.join("\n"),
+                unitAmounts.join("\n"),
+                cells[7]?.textContent.trim() || "₹0",
+                cells[8]?.textContent.trim() || "₹0",
+            ];
+        });
+
+        // Add data to worksheet
+        XLSX.utils.sheet_add_aoa(worksheet, tableRows, { origin: "A2" });
+
+        // Adjust column widths for readability
+        worksheet["!cols"] = [
+            { wch: 15 },
+            { wch: 15 },
+            { wch: 25 },
+            { wch: 25 },
+            { wch: 40 },
+            { wch: 15 },
+            { wch: 15 },
+            { wch: 15 },
+            { wch: 15 },
+        ];
+
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Invoice_Details");
+
         XLSX.writeFile(workbook, "Invoice_Details.xlsx");
     };
 
@@ -91,10 +190,9 @@ const Table_DB = () => {
         link.click();
     };
 
-    // Pagination calculations
+    //* Pagination calculations
     const totalPages = Math.ceil(invoices.length / rowsPerPage);
-    const startRow = (currentPage - 1) * rowsPerPage;
-    // const currentRows = invoices.slice(startRow, startRow + rowsPerPage);
+    const startRow = (currentPage - 1) * rowsPerPage;    
 
     const handlePageChange = (pageNumber) => {
         if (pageNumber > 0 && pageNumber <= totalPages) {
@@ -102,7 +200,7 @@ const Table_DB = () => {
         }
     }
 
-    // Handle rowsPerPage selection change
+    //* Handle rowsPerPage selection change
     const handleRowsPerPageChange = (e) => {
         setRowsPerPage(parseInt(e.target.value));
         setCurrentPage(1); // Reset to first page when rows per page changes
@@ -121,7 +219,7 @@ const Table_DB = () => {
                             <h1 className='text-gray-500'>Export:</h1>
                             <select
                                 onChange={handleExport}
-                                className="cursor-pointer block w-24 p-1 py-2 border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                className="cursor-pointer rounded-md block w-24 p-1 py-2 border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             >
                                 <option value="">Select</option>
                                 <option value="PDF">PDF</option>
@@ -140,12 +238,13 @@ const Table_DB = () => {
                             <select
                                 value={rowsPerPage}
                                 onChange={handleRowsPerPageChange}
-                                className="cursor-pointer mt-1 p-2 block w-14 border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                className="cursor-pointer rounded-md mt-1 p-1.5 block w-20 border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             >
                                 <option value={5}>5</option>
                                 <option value={10}>10</option>
-                                <option value={15}>15</option>
-                                <option value={20}>20</option>
+                                <option value={25}>25</option>
+                                <option value={50}>50</option>
+                                <option value={100}>100</option>
                             </select>
                             <h1 className="text-gray-500">entries</h1>
                         </div>
@@ -157,15 +256,15 @@ const Table_DB = () => {
                                 placeholder="Search By Vendor Name"
                                 value={searchInput}
                                 onChange={(e) => setSearchInput(e.target.value)}
-                                className="cursor-pointer mt-1 p-2 block w-full border border-gray-300 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                className="mt-1 p-2 rounded-md block w-full border border-gray-300 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             />
                         </div>
                     </div>
 
                     {/* Table */}
                     <div className="overflow-x-auto p-4">
-                        <div className="rounded-lg shadow-lg border border-gray-300 overflow-hidden">
-                            <table ref={tableRef} className="w-full text-sm text-left text-gray-800 bg-white">
+                        <div className="rounded-lg shadow-lg border border-gray-300">
+                            <table id="table_data" ref={tableRef} className="w-full text-sm text-left text-gray-800 bg-white overflow-x-auto">
                                 <thead className="text-xs font-bold uppercase bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg">
                                     <tr>
                                         {[
@@ -194,9 +293,9 @@ const Table_DB = () => {
                                             >
                                                 <td className="px-6 py-4 border border-gray-300 text-center">{invoice.invoice_number || "null"}</td>
                                                 <td className="px-6 py-4 border border-gray-300 text-center">{invoice.date || "null"}</td>
-                                                <td className="px-6 py-4 border border-gray-300 text-center">{invoice.company_name || "null"}</td>
-                                                <td className="px-6 py-4 border border-gray-300 text-center">{invoice.vendor_name || "null"}</td>
-                                                <td className="px-6 py-4 border border-gray-300 text-center">
+                                                <td className="px-6 py-4 border border-gray-300">{invoice.company_name || "null"}</td>
+                                                <td className="px-6 py-4 border border-gray-300">{invoice.vendor_name || "null"}</td>
+                                                <td className="px-6 py-4 border border-gray-300">
                                                     {invoice.products?.length ? (
                                                         <ul className="list-disc pl-4 text-sm text-gray-700">
                                                             {invoice.products.map((product, idx) => (
@@ -212,16 +311,16 @@ const Table_DB = () => {
                                                         ? invoice.products.map((p, idx) => <div key={idx}>{p.quantity || 0}</div>)
                                                         : "null"}
                                                 </td>
-                                                <td className="px-6 py-4 border border-gray-300 text-center text-green-600 font-medium">
+                                                <td className="px-6 py-4 border border-gray-300 text-green-600 font-medium">
                                                     {invoice.products?.length
-                                                        ? invoice.products.map((p, idx) => <div key={idx}>₹{p.unit_amount || 0}</div>)
+                                                        ? invoice.products.map((p, idx) => <div key={idx}>{p.unit_amount || 0}</div>)
                                                         : "null"}
                                                 </td>
                                                 <td className="px-6 py-4 border border-gray-300 text-center text-yellow-600 font-medium">
-                                                    ₹{invoice.tax_amount || 0}
+                                                    {invoice.tax_amount || 0}
                                                 </td>
                                                 <td className="px-6 py-4 border border-gray-300 text-center text-indigo-700 font-medium">
-                                                    ₹{invoice.total || 0}
+                                                    {invoice.total || 0}
                                                 </td>
                                             </tr>
                                         ))
@@ -243,7 +342,7 @@ const Table_DB = () => {
                         <nav>
                             <ul className="inline-flex text-sm border border-gray-300">
                                 <li>
-                                    <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className={`px-3 h-8 cursor-pointer ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "text-gray-500"}`}>Previous</button>
+                                    <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className={`px-3 h-8 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "text-gray-500 cursor-pointer"}`}>Previous</button>
                                 </li>
                                 {Array.from({ length: totalPages }).map((_, index) => (
                                     <li key={index}>
@@ -251,7 +350,7 @@ const Table_DB = () => {
                                     </li>
                                 ))}
                                 <li>
-                                    <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className={`px-3 h-8 cursor-pointer ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "text-cyan-700"}`}>Next</button>
+                                    <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className={`px-3 h-8 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "text-cyan-700 cursor-pointer"}`}>Next</button>
                                 </li>
                             </ul>
                         </nav>
@@ -260,8 +359,8 @@ const Table_DB = () => {
                 </div>
             </div>
         </div>
-
     );
 };
+
 
 export default Table_DB;

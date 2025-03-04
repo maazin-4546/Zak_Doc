@@ -1,27 +1,23 @@
 const mongoose = require("mongoose");
 
 const InvoiceSchema = new mongoose.Schema({
-    invoice_number: { type: String, required: true },  
-    date: { type: String, required: true },
-    company_name: { type: String, required: true },
+    invoice_number: { type: String, required: false },
+    date: { type: String, required: false },
+    company_name: { type: String, required: false },
     vendor_name: { type: String, required: false },
-    tax_amount: { type: Number, required: false },
-    total: { type: Number, required: true },
+    tax_amount: { type: String, required: false },
+    total: { type: String, required: false },
     products: [
         {
-            product_name: { type: String, required: true },
-            quantity: { type: Number, required: true },
-            unit_amount: { type: Number, required: true }
+            product_name: { type: String, required: false },
+            quantity: { type: Number, required: false },
+            unit_amount: { type: String, required: false }
         }
     ]
 });
+
 
 const Invoice = mongoose.model("Invoice", InvoiceSchema);
 module.exports = Invoice;
 
 
-
-
-// const mongoose = require("mongoose");
-// const InvoiceSchema = new mongoose.Schema({}, { strict: false }); // Allows storing any JSON format
-// module.exports = mongoose.model("Invoice", InvoiceSchema);

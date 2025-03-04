@@ -2,9 +2,10 @@ const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
 const path = require("path");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 const fs = require("fs");
 require("dotenv").config();
+const { spawn } = require("child_process");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const connectDB = require("./db/connection");
 const Invoice = require("./models/Invoice");
 const invoiceRoutes = require("./routes/invoices");
@@ -20,7 +21,7 @@ app.use(invoiceRoutes);
 
 connectDB();
 
-// Configure Multer for file upload
+// Configure Multer for file uploads (PDFs & Images)
 const upload = multer({ dest: "uploads/" });
 
 const MODEL_CONFIG = {
@@ -30,57 +31,111 @@ const MODEL_CONFIG = {
     maxOutputTokens: 4096,
 };
 
-
+// Convert image to base64
 const imageToBase64 = (imagePath) => {
     return fs.readFileSync(imagePath).toString("base64");
 };
 
-// Function to extract data from the image
-const extractInvoiceData = async (imagePath) => {
+// **Extract invoice data from an image using Gemini**
+const extractInvoiceFromImage = async (imagePath) => {
     try {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const imageBase64 = imageToBase64(imagePath);
         const imageParts = [{ inlineData: { mimeType: "image/png", data: imageBase64 } }];
 
-        const userPrompt = `You are an expert in document data extraction. Extract only the relevant fields from this invoice image and return a **valid JSON object**. Follow these rules:
+        const userPrompt = `You are an expert in document data extraction. Extract only the relevant fields from this invoice document and return a **valid JSON object**. The user may upload either a **multi-page PDF** or an **image (JPG, PNG, etc.)**, so ensure proper extraction of all details from the entire document.
 
-        1️⃣ **General Fields**:
-        - "invoice_number": The unique invoice number.
-        - "date": The **invoice date** (ignore order, shipping, or due dates).
-        - "company_name": The **billing company** (not vendor or customer).
-        - "vendor_name": The **seller or supplier** of the product.
-        - "tax_amount": The **total tax applied**.
-        - "total": The **final amount after tax**.
-
-        2️⃣ **Products Section**:
-        - "products": A list of objects, each containing:
-            - "product_name": The **exact product/service name**.
-            - "quantity": The **number of units purchased**.
-            - "unit_amount": The **price per unit**.
+        The invoice may be in **English, French, or Arabic**. Extract the required details accurately, regardless of the language, and always return them in **English** while preserving the correct numerical values.
         
-        3️⃣ **Data Handling**:
-        - If a field **does not exist**, return **null**.
-        - **Ensure JSON validity**, no Markdown formatting.
-        - Return data in **proper JSON format**, enclosed in curly braces { }.
-        - If multiple products exist, return all in the "products" array.
-        - Do **not** return unnecessary details.
-
-        🚀 **Expected Output Example:**
-        \`\`\`json
+        🚀 **Important Fixes for Arabic & French Extraction:**  
+        ✔ Ensure **Company Name** and **Vendor Name** are **not swapped**. Use context-based extraction:  
+          - **Company Name**: Typically appears **at the top**, near the logo/header, or in sections labeled as **"Company Name" (EN), "Nom de l'entreprise" (FR), "اسم الشركة" (AR)**.  
+          - **Vendor Name**: Found in **billing sections**, under "Customer Name," "Billed To," or similar labels: **"Nom du client" (FR), "اسم العميل" (AR)**.  
+        ✔ **Invoice Number** detection improved by verifying it follows common formats (e.g., "INV-XXXX", "FAC-XXXX", numerical sequences).  
+        ✔ Ensure **currency is extracted correctly** alongside amounts without confusion.  
+        ✔ Fix **Arabic text mirroring issues** by handling right-to-left (RTL) text properly.
+        
+        ---
+        
+        ### 1️⃣ **General Fields**
+        - **"invoice_number"**: Extract the invoice number **only if labeled correctly**, ensuring it follows typical patterns such as:
+          - **English**: "Invoice No.", "Bill No.", "Receipt No."
+          - **French**: "Numéro de facture", "Facture No."
+          - **Arabic**: "رقم الفاتورة"
+          - **Avoid extracting order numbers, shipment numbers, or unrelated numeric strings.**
+          
+        - **"date"**: Extract the invoice date, ensuring it is labeled as:
+          - **English**: "Invoice Date"
+          - **French**: "Date de facture"
+          - **Arabic**: "تاريخ الفاتورة"
+          - Ignore unrelated dates like "Shipping Date" or "Due Date."
+        
+        - **"company_name"**: Extract the business/entity issuing the invoice:
+          - Usually appears **at the top** of the document.
+          - Ignore vendor/customer details in this field.
+        
+        - **"vendor_name"**: Extract the buyer/customer name:
+          - Usually appears in sections labeled as **"Billed To," "Customer Name," "Sold To."**
+          - Ignore company details in this field.
+        
+        ---
+        
+        ### 2️⃣ **Amount-Related Fields (Flexible Tax Handling)**
+        - **"tax_amount"**: Extract all applicable taxes.
+          - **If a single tax exists**, return it as a **string** (e.g., "36.010 AED").
+          - **If multiple tax types exist**, return them as a **structured object**.
+          - **Example Outputs:**            
+            "tax_amount": "36.010 AED"            
+            OR              
+            "tax_amount": { "VAT": "36.010 AED", "GST": "5%" }            
+          - **Ensure flexibility in data types** to avoid validation errors.
+        
+        - **"total"**: The **final amount** payable, including tax.
+          - **Ensure the amount includes the correct currency.**
+          - **Example Output:**              
+            "total": "₹13715.52"            
+        
+        ---
+        
+        ### 3️⃣ **Products Section**
+        - **"products"**: Extract all items with:
+          - **"product_name"**: Preserve exact item descriptions.
+          - **"quantity"**: Extract only the **numeric value** from the quantity field. If the quantity contains units (e.g., "12 Nos", "15 Pcs"), remove non-numeric characters and return only the number.
+          - **Example Outputs:**            
+            "quantity": 12                        
+            "quantity": 15            
+          - **"unit_amount"**: Ensure amount **includes currency**.
+          - **Example Output:**            
+            "unit_amount": "$9999"            
+            
+        ---        
+        
+        ### 4️⃣ **Data Handling**
+        ✔ **Avoid Field Swapping**: Ensure company/vendor names are extracted correctly.  
+        ✔ **Prevent Incorrect Invoice Number Extraction**: Verify labels and formats.  
+        ✔ **Fix Arabic Mirroring Issues**: Handle RTL text properly.  
+        ✔ **Ensure JSON Validity**: No markdown, return only structured JSON.  
+        ✔ **Flexible Tax Handling**: Allow both **single values and objects** for tax amounts.
+        ✔ **Ensure Numeric Quantity Extraction**: Convert quantity values to **numbers only** by removing unit labels like "Nos", "Pcs", etc.
+        
+        🚀 **Expected Output Example:**        
         {
             "invoice_number": "INV-12345",
             "date": "2024-02-20",
             "company_name": "Saffron Design",
             "vendor_name": "Priya Chopra",
-            "tax_amount": 1469.52,
-            "total": 13715.52,
+            "tax_amount": {
+                "VAT": "36.010 AED",
+                "SGST": "₹9"
+            },
+            "total": "₹13715.52",
             "products": [
-                { "product_name": "Frontend design restructure", "quantity": 1, "unit_amount": 9999 },
-                { "product_name": "Backend API setup", "quantity": 2, "unit_amount": 3000 }
+                { "product_name": "Frontend design restructure", "quantity": 12, "unit_amount": "$9999" },
+                { "product_name": "Backend API setup", "quantity": 15, "unit_amount": "€3000" }
             ]
-        }
-        \`\`\`
-        Return only JSON output with no explanations or additional text.`;
+        }        
+        
+        Return **only JSON output**, with no explanations or additional text.`;
 
         const result = await model.generateContent({
             contents: [{ role: "user", parts: [...imageParts, { text: userPrompt }] }],
@@ -88,12 +143,9 @@ const extractInvoiceData = async (imagePath) => {
         });
 
         let responseText = result.response.text();
-        console.log("Raw Response:", responseText);  // Debugging: Log the raw response
-
-        // Extract JSON correctly
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-            responseText = jsonMatch[0];  // Extract only the JSON part
+            responseText = jsonMatch[0];
         } else {
             console.error("Failed to parse JSON from response.");
             return { error: "Invalid JSON format received." };
@@ -106,39 +158,215 @@ const extractInvoiceData = async (imagePath) => {
     }
 };
 
+// **Extract text from PDF using Python script**
+const extractTextFromPDF = (pdfPath) => {
+    return new Promise((resolve, reject) => {
+        const pythonProcess = spawn("python", ["pdf_text_extractor.py", pdfPath]);
 
-// API Route: Extract and Store Invoice Data
-app.post("/extract", upload.single("image"), async (req, res) => {
+        let extractedText = "";
+        let errorMessage = "";
+
+        pythonProcess.stdout.on("data", (data) => {
+            try {
+                const response = JSON.parse(data.toString().trim());
+                extractedText = response.text || "";
+            } catch (err) {
+                errorMessage = "Error parsing JSON from Python output.";
+            }
+        });
+
+        pythonProcess.stderr.on("data", (data) => {
+            errorMessage += data.toString();
+            console.error("PDF Extraction Error:", errorMessage);
+        });
+
+        pythonProcess.on("close", (code) => {
+            if (code !== 0 || !extractedText) {
+                reject(new Error(errorMessage || "Failed to extract text from PDF"));
+            } else {
+                resolve(extractedText);
+            }
+        });
+    });
+};
+
+// **Extract invoice data from pdf using Gemini**
+const extractInvoiceFromText = async (pdfText) => {
     try {
-        if (!req.file) return res.status(400).json({ error: "No image uploaded" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        const imagePath = path.resolve(req.file.path);
-        const extractedData = await extractInvoiceData(imagePath);
+        const userPrompt = `You are an expert in document data extraction. Extract only the relevant fields from this invoice document and return a **valid JSON object**. The user may upload either a **multi-page PDF** or an **image (JPG, PNG, etc.)**, so ensure proper extraction of all details from the entire document.
 
-        fs.unlinkSync(imagePath); // Delete uploaded file after processing
+        The invoice may be in **English, French, or Arabic**. Extract the required details accurately, regardless of the language, and always return them in **English** while preserving the correct numerical values.
+        
+        🚀 **Important Fixes for Arabic & French Extraction:**  
+        ✔ Ensure **Company Name** and **Vendor Name** are **not swapped**. Use context-based extraction:  
+          - **Company Name**: Typically appears **at the top**, near the logo/header, or in sections labeled as **"Company Name" (EN), "Nom de l'entreprise" (FR), "اسم الشركة" (AR)**.  
+          - **Vendor Name**: Found in **billing sections**, under "Customer Name," "Billed To," or similar labels: **"Nom du client" (FR), "اسم العميل" (AR)**.  
+        ✔ **Invoice Number** detection improved by verifying it follows common formats (e.g., "INV-XXXX", "FAC-XXXX", numerical sequences).  
+        ✔ Ensure **currency is extracted correctly** alongside amounts without confusion.  
+        ✔ Fix **Arabic text mirroring issues** by handling right-to-left (RTL) text properly.
+        
+        ---
+        
+        ### 1️⃣ **General Fields**
+        - **"invoice_number"**: Extract the invoice number **only if labeled correctly**, ensuring it follows typical patterns such as:
+          - **English**: "Invoice No.", "Bill No.", "Receipt No."
+          - **French**: "Numéro de facture", "Facture No."
+          - **Arabic**: "رقم الفاتورة"
+          - **Avoid extracting order numbers, shipment numbers, or unrelated numeric strings.**
+          
+        - **"date"**: Extract the invoice date, ensuring it is labeled as:
+          - **English**: "Invoice Date"
+          - **French**: "Date de facture"
+          - **Arabic**: "تاريخ الفاتورة"
+          - Ignore unrelated dates like "Shipping Date" or "Due Date."
+        
+        - **"company_name"**: Extract the business/entity issuing the invoice:
+          - Usually appears **at the top** of the document.
+          - Ignore vendor/customer details in this field.
+        
+        - **"vendor_name"**: Extract the buyer/customer name:
+          - Usually appears in sections labeled as **"Billed To," "Customer Name," "Sold To."**
+          - Ignore company details in this field.
+        
+        ---
+        
+        ### 2️⃣ **Amount-Related Fields (Flexible Tax Handling)**
+        - **"tax_amount"**: Extract all applicable taxes.
+          - **If a single tax exists**, return it as a **string** (e.g., "36.010 AED").
+          - **If multiple tax types exist**, return them as a **structured object**.
+          - **Example Outputs:**            
+            "tax_amount": "36.010 AED"            
+            OR              
+            "tax_amount": { "VAT": "36.010 AED", "GST": "5%" }            
+          - **Ensure flexibility in data types** to avoid validation errors.
+        
+        - **"total"**: The **final amount** payable, including tax.
+          - **Ensure the amount includes the correct currency.**
+          - **Example Output:**              
+            "total": "₹13715.52"            
+        
+        ---
+        
+        ### 3️⃣ **Products Section**
+        - **"products"**: Extract all items with:
+          - **"product_name"**: Preserve exact item descriptions.
+          - **"quantity"**: Extract only the **numeric value** from the quantity field. If the quantity contains units (e.g., "12 Nos", "15 Pcs"), remove non-numeric characters and return only the number.
+          - **Example Outputs:**            
+            "quantity": 12                        
+            "quantity": 15            
+          - **"unit_amount"**: Ensure amount **includes currency**.
+          - **Example Output:**            
+            "unit_amount": "$9999"            
+            
+        ---
+        
+        ### 4️⃣ **Multi-Page PDF Handling**
+        - If the document is a **multi-page PDF**, extract details **across all pages**.
+        - Ensure the output remains **consistent and structured**.
+        
+        ---
+        
+        ### 5️⃣ **Data Handling**
+        ✔ **Avoid Field Swapping**: Ensure company/vendor names are extracted correctly.  
+        ✔ **Prevent Incorrect Invoice Number Extraction**: Verify labels and formats.  
+        ✔ **Fix Arabic Mirroring Issues**: Handle RTL text properly.  
+        ✔ **Ensure JSON Validity**: No markdown, return only structured JSON.  
+        ✔ **Flexible Tax Handling**: Allow both **single values and objects** for tax amounts.
+        ✔ **Ensure Numeric Quantity Extraction**: Convert quantity values to **numbers only** by removing unit labels like "Nos", "Pcs", etc.
+        
+        🚀 **Expected Output Example:**        
+        {
+            "invoice_number": "INV-12345",
+            "date": "2024-02-20",
+            "company_name": "Saffron Design",
+            "vendor_name": "Priya Chopra",
+            "tax_amount": {
+                "VAT": "36.010 AED",
+                "SGST": "₹9"
+            },
+            "total": "₹13715.52",
+            "products": [
+                { "product_name": "Frontend design restructure", "quantity": 12, "unit_amount": "$9999" },
+                { "product_name": "Backend API setup", "quantity": 15, "unit_amount": "€3000" }
+            ]
+        }        
+        
+        Return **only JSON output**, with no explanations or additional text.
+                
+        **Text Input:** ${pdfText}`;
+
+        const result = await model.generateContent({
+            contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+            generationConfig: MODEL_CONFIG,
+        });
+
+        let responseText = result.response.text();
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            responseText = jsonMatch[0];
+        } else {
+            console.error("Failed to parse JSON from response.");
+            return { error: "Invalid JSON format received." };
+        }
+
+        return JSON.parse(responseText.trim());
+    } catch (error) {
+        console.error("Error extracting invoice data:", error.message);
+        return { error: error.message };
+    }
+};
+
+//* Main API Route to Process File (PDF or Image)
+app.post("/extract", upload.single("file"), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+        const filePath = path.resolve(req.file.path);
+        let extractedData;
+
+        // **Process PDF**
+        if (req.file.mimetype === "application/pdf") {
+            console.log("Processing PDF file...");
+            const extractedText = await extractTextFromPDF(filePath);
+            extractedData = await extractInvoiceFromText(extractedText);
+        }
+        // **Process Image**
+        else if (req.file.mimetype.startsWith("image/")) {
+            console.log("Processing Image file...");
+            extractedData = await extractInvoiceFromImage(filePath);
+        }
+        // **Unsupported File Type**
+        else {
+            return res.status(400).json({ error: "Unsupported file format. Upload a PDF or an image." });
+        }
+
+        // Delete uploaded file after processing
+        fs.unlinkSync(filePath);
 
         if (extractedData.error) {
             return res.status(500).json({ error: extractedData.error });
         }
 
-        
+        // Save extracted data to database
         const invoice = new Invoice({
             invoice_number: extractedData.invoice_number,
             date: extractedData.date,
             company_name: extractedData.company_name,
-            vendor_name: extractedData.vendor_name || null, 
+            vendor_name: extractedData.vendor_name || null,
             tax_amount: extractedData.tax_amount || 0,
             total: extractedData.total,
-            products: extractedData.products 
+            products: extractedData.products
         });
 
         await invoice.save();
 
         res.json({ success: true, message: "Invoice data saved successfully!", data: invoice });
     } catch (error) {
+        console.error("Error:", error.message);
         res.status(500).json({ error: error.message });
     }
 });
-
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

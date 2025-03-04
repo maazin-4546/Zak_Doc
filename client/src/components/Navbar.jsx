@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 const Navbar = () => {
 
@@ -22,8 +22,8 @@ const Navbar = () => {
     return (
         <nav
             className={`fixed top-0 w-full z-20 transition-all duration-300 ${isScrolled
-                    ? "bg-white shadow-lg backdrop-blur-md"
-                    : "bg-gradient-to-r from-cyan-600 to-cyan-700"
+                ? "bg-white shadow-lg backdrop-blur-md"
+                : "bg-gradient-to-r from-cyan-600 to-cyan-700"
                 }`}
         >
             <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
@@ -32,23 +32,23 @@ const Navbar = () => {
                     className="flex items-center space-x-3 rtl:space-x-reverse"
                 >
                     <img
-                        src="https://flowbite.com/docs/images/logo.svg"
-                        className="h-10 rounded-full shadow-md"
+                        src="./favicon.png"
+                        className={`h-12 rounded-full ${isScrolled ? "shadow-md shadow-gray-500" : ""}`}
                         alt="Flowbite Logo"
                     />
                     <span
                         className={`self-center text-2xl font-bold tracking-wide ${isScrolled ? "text-gray-800" : "text-white"
                             }`}
                     >
-                        Data Extraction
+                        ZakDoc
                     </span>
                 </a>
                 <button
                     onClick={() => setIsOpen(!isOpen)}
                     type="button"
                     className={`inline-flex items-center p-2 w-10 h-10 justify-center text-sm rounded-lg md:hidden ${isScrolled
-                            ? "text-gray-700 hover:bg-gray-200"
-                            : "text-white hover:bg-blue-600"
+                        ? "text-gray-700 hover:bg-gray-200"
+                        : "text-white hover:bg-blue-600"
                         } focus:outline-none focus:ring-2 focus:ring-gray-200`}
                     aria-controls="navbar-default"
                     aria-expanded={isOpen}
@@ -85,8 +85,8 @@ const Navbar = () => {
                                     <a
                                         href="#"
                                         className={`block py-2 px-4 rounded-md transition-colors duration-200 ${isScrolled
-                                                ? "text-gray-700 hover:bg-gray-100 hover:text-blue-600"
-                                                : "text-white hover:text-yellow-300"
+                                            ? "text-gray-700 hover:bg-gray-100 hover:text-blue-600"
+                                            : "text-white hover:text-yellow-300"
                                             } md:hover:bg-transparent md:p-0`}
                                     >
                                         {item}
