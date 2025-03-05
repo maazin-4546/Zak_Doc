@@ -1,175 +1,117 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import { useState } from "react";
+import axios from "axios";
 
-const ImageUpload = () => {
+const InvoiceExtractor = () => {
+    
     const [file, setFile] = useState(null);
-    const [extractedText, setExtractedText] = useState('');
+    const [jsonData, setJsonData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [preview, setPreview] = useState(null);
 
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/svg+xml'];
-    const maxSize = 2 * 1024 * 1024; // 2MB
+    const handleFileChange = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            setFile(file);
+            setSelectedFile(file);
+            if (file.type.startsWith("image/")) {
+                setPreview(URL.createObjectURL(file));
+            } else {
+                setPreview(null); // No preview for PDFs
+            }
+        }
+    };
 
-    const validateFile = (file) => {
+    const handleUpload = async () => {
         if (!file) {
-            setError('Please select an image file.');
-            return false;
-        }
-        if (!allowedTypes.includes(file.type)) {
-            setError('Invalid file type. Allowed types: PNG, JPG, JPEG, GIF, SVG.');
-            return false;
-        }
-        if (file.size > maxSize) {
-            setError('File size exceeds 2MB.');
-            return false;
-        }
-        setError(null); // Clear errors if valid
-        return true;
-    };
-
-    const handleFileChange = (e) => {
-        const selectedFile = e.target.files[0];
-        if (validateFile(selectedFile)) {
-            setFile(selectedFile);
-        } else {
-            setFile(null);
-        }
-    };
-
-    const handleDrop = (event) => {
-        event.preventDefault();
-        const droppedFile = event.dataTransfer.files[0];
-        if (validateFile(droppedFile)) {
-            setFile(droppedFile);
-        } else {
-            setFile(null);
-        }
-    };
-
-    const handleDragOver = (event) => {
-        event.preventDefault();
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        if (!file) {
-            setError('Please select a valid image file before submitting.');
+            alert("Please select an image or PDF file first!");
             return;
         }
 
+        setLoading(true);
+        setError(null);
+
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append("file", file);
 
         try {
-            setLoading(true);
-            setError(null);
-
-            const response = await axios.post('http://localhost:5000/extract-text', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+            const response = await axios.post("http://localhost:5000/extract", formData, {
+                headers: { "Content-Type": "multipart/form-data" },
             });
 
-            setExtractedText(response.data.extracted_text);
+            if (response.data.success) {
+                setJsonData(response.data.data);
+            } else {
+                setError("Failed to extract data");
+            }
         } catch (err) {
-            setError(err.response?.data?.error || 'An error occurred while extracting text.');
-        } finally {
-            setLoading(false);
+            setError(err.response?.data?.error || "Something went wrong");
         }
+
+        setLoading(false);
     };
 
     return (
-        <div className="py-8 flex items-center justify-center p-4 pt-32">
-            <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
-                <h1 className="text-2xl font-bold text-[#1A56DB] text-center mb-4">
-                    Extract Text from Image
-                </h1>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="flex items-center justify-center w-full">
-                        <label
-                            htmlFor="dropzone-file"
-                            className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:hover:border-gray-500"
-                            onDrop={handleDrop}
-                            onDragOver={handleDragOver}
-                        >
-                            {!file ? (
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <svg
-                                        className="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400"
-                                        aria-hidden="true"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 20 16"
-                                    >
-                                        <path
-                                            stroke="currentColor"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                                        />
-                                    </svg>
-                                    <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                                        <span className="font-semibold">Click to upload</span> or drag and drop
-                                    </p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        PNG, JPG, JPEG, GIF, SVG (Max: 2MB)
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">File Uploaded!</h2>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300"><strong>Name:</strong> {file.name}</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300"><strong>Size:</strong> {(file.size / 1024).toFixed(2)} KB</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300"><strong>Type:</strong> {file.type}</p>
+        <div className="mt-14 flex flex-col items-center justify-center min-h-screen p-6">
+            <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-lg text-center border border-gray-200">
+                <h2 className="text-3xl font-extrabold text-cyan-700 mb-6 tracking-wide">Invoice Data Extraction</h2>
 
-                                    {file.type.startsWith('image/') && (
-                                        <img
-                                            src={URL.createObjectURL(file)}
-                                            alt="Preview"
-                                            className="mt-4 w-auto h-32 object-contain rounded-lg"
-                                        />
-                                    )}
-                                </div>
-                            )}
-                            <input
-                                id="dropzone-file"
-                                type="file"
-                                className="hidden"
-                                onChange={handleFileChange}
-                                accept=".svg, .png, .jpg, .jpeg, .gif"
-                            />
-                        </label>
+                {/* File Input */}
+                <label className="block w-full cursor-pointer">
+                    <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        onChange={handleFileChange}
+                        className="hidden"
+                    />
+                    <div className="w-full h-16 px-5 py-3 border border-gray-300 rounded-xl bg-white text-gray-700 shadow-lg hover:border-blue-500 focus:ring-2 focus:ring-blue-400 focus:outline-none flex items-center justify-center text-lg font-medium transition-all duration-300">
+                        📂 Upload Invoice (Image/PDF)
                     </div>
+                </label>
 
-                    {error && (
-                        <p className="mt-2 text-red-500 text-sm text-center">{error}</p>
-                    )}
-
-                    <button
-                        type="submit"
-                        className={`w-full cursor-pointer py-2 px-4 text-white font-medium rounded-lg transition ${loading ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
-                            }`}
-                        disabled={loading}
-                    >
-                        {loading ? 'Extracting...' : 'Extract'}
-                    </button>
-                </form>
-
-                {extractedText && (
-                    <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                            Extracted Text:
-                        </h3>
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                            {extractedText}
+                {/* File Details */}
+                {selectedFile && (
+                    <div className="mt-6 p-5 bg-gray-100 rounded-xl w-full border border-gray-300 shadow-sm">
+                        <p className="text-gray-700 font-medium">
+                            File Name: <span className="font-semibold text-blue-600">{selectedFile.name}</span>
                         </p>
+                        <p className="text-gray-700 font-medium">
+                            Size: <span className="font-semibold text-blue-600">{(selectedFile.size / 1024).toFixed(2)} KB</span>
+                        </p>
+
+                        {/* Image Preview */}
+                        {preview && (
+                            <div className="mt-4">
+                                <img src={preview} alt="Preview" className="w-48 h-48 object-cover rounded-xl border border-gray-300 shadow-md mx-auto" />
+                            </div>
+                        )}
                     </div>
+                )}
+
+                {/* Extract Button */}
+                <button
+                    onClick={handleUpload}
+                    className={`w-full mt-6 py-3 px-6 text-lg font-semibold cursor-pointer text-white rounded-xl transition-all duration-300 
+            ${loading ? 'bg-cyan-600 cursor-not-allowed' : 'bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-700 hover:to-cyan-600 shadow-lg hover:shadow-xl'}`}
+                    disabled={loading}
+                >
+                    {loading ? '🔄 Extracting...' : '🚀 Extract Data'}
+                </button>
+
+                {/* Error Message */}
+                {error && <p className="mt-4 text-red-500 text-lg font-medium">{error}</p>}
+
+                {/* Extracted JSON Data */}
+                {jsonData && (
+                    <pre className="mt-6 bg-gray-100 text-gray-700 p-5 rounded-xl text-left w-full max-h-96 overflow-auto border border-gray-300 shadow-md">
+                        {JSON.stringify(jsonData, null, 2)}
+                    </pre>
                 )}
             </div>
         </div>
     );
 };
 
-export default ImageUpload;
+export default InvoiceExtractor;
+
