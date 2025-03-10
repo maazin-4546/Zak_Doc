@@ -1,17 +1,17 @@
 const mongoose = require("mongoose");
 
 const InvoiceSchema = new mongoose.Schema({
-    invoice_number: { type: String, required: false },
-    date: { type: String, required: false },
-    company_name: { type: String, required: false },
-    vendor_name: { type: String, required: false },
-    tax_amount: { type: String, required: false },
-    total: { type: String, required: false },
+    invoice_number: { type: String },
+    date: { type: String },
+    company_name: { type: String },
+    vendor_name: { type: String },
+    tax_amount: { type: String },
+    total: { type: String },
     products: [
         {
-            product_name: { type: String, required: false },
-            quantity: { type: Number, required: false },
-            unit_amount: { type: String, required: false }
+            product_name: { type: String },
+            quantity: { type: Number },
+            unit_amount: { type: String }
         }
     ]
 });

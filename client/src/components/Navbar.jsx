@@ -32,7 +32,7 @@ const Navbar = () => {
                     className="flex items-center space-x-3 rtl:space-x-reverse"
                 >
                     <img
-                        src="./favicon.png"
+                        src="./NavIcon.JPG"
                         className={`h-12 rounded-full ${isScrolled ? "shadow-md shadow-gray-500" : ""}`}
                         alt="Flowbite Logo"
                     />

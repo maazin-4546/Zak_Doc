@@ -1,8 +1,11 @@
 import { useState } from "react";
 import axios from "axios";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
 
 const InvoiceExtractor = () => {
-    
+
     const [file, setFile] = useState(null);
     const [jsonData, setJsonData] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -42,18 +45,32 @@ const InvoiceExtractor = () => {
 
             if (response.data.success) {
                 setJsonData(response.data.data);
+                toast.success("Data extracted successfully!", {
+                    position: "top-right",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    theme: "light",
+                });
             } else {
                 setError("Failed to extract data");
+                toast.error("Failed to extract data", { position: "top-right" });
             }
         } catch (err) {
-            setError(err.response?.data?.error || "Something went wrong");
+            const errorMessage = err.response?.data?.error || "Something went wrong";
+            setError(errorMessage);
+            toast.error("Something went wrong", { position: "top-right" });
         }
 
         setLoading(false);
     };
 
+
     return (
         <div className="mt-14 flex flex-col items-center justify-center min-h-screen p-6">
+            <ToastContainer />
             <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-lg text-center border border-gray-200">
                 <h2 className="text-3xl font-extrabold text-cyan-700 mb-6 tracking-wide">Invoice Data Extraction</h2>
 
