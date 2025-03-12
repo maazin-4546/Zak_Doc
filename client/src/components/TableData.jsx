@@ -3,6 +3,7 @@ import axios from "axios";
 import jsPDF from "jspdf";
 import 'jspdf-autotable';
 import * as XLSX from "xlsx"
+import amiriFontBase64 from "../../fonts/AmiriBase64";
 
 const Table_DB = () => {
 
@@ -61,6 +62,11 @@ const Table_DB = () => {
             format: "A4",
         });
 
+        // Register the Amiri font
+        doc.addFileToVFS("Amiri-Regular.ttf", amiriFontBase64);
+        doc.addFont("Amiri-Regular.ttf", "Amiri", "normal");
+        doc.setFont("Amiri");
+
         const table = document.getElementById("table_data");
 
         const headers = [];
@@ -92,16 +98,16 @@ const Table_DB = () => {
             startY: 60,
             theme: "striped",
             styles: {
+                font: "Amiri", // Apply Arabic font
                 cellPadding: 4,
-                fontSize: 6,
+                fontSize: 8,
                 halign: "left",
                 valign: "middle",
             },
             columnStyles: {
-
-                6: { halign: "left" }, // Unit Amount column aligned right
-                7: { halign: "left" }, // Tax Amount column aligned right
-                8: { halign: "left" }, // Total column aligned right
+                6: { halign: "left" },
+                7: { halign: "left" },
+                8: { halign: "left" },
             },
         });
 
@@ -203,7 +209,7 @@ const Table_DB = () => {
     //* Handle rowsPerPage selection change
     const handleRowsPerPageChange = (e) => {
         setRowsPerPage(parseInt(e.target.value));
-        setCurrentPage(1); // Reset to first page when rows per page changes
+        setCurrentPage(1);
     };
 
 
@@ -273,6 +279,7 @@ const Table_DB = () => {
                                             "Company Name",
                                             "Vendor Name",
                                             "Products",
+                                            "Category",
                                             "Quantity",
                                             "Unit Amount",
                                             "Tax Amount",
@@ -306,6 +313,7 @@ const Table_DB = () => {
                                                         "null"
                                                     )}
                                                 </td>
+                                                <td className="px-6 py-4 border border-gray-300">{invoice.category || "null"}</td>
                                                 <td className="px-6 py-4 border border-gray-300 text-center">
                                                     {invoice.products?.length
                                                         ? invoice.products.map((p, idx) => <div key={idx}>{p.quantity || 0}</div>)
@@ -342,7 +350,7 @@ const Table_DB = () => {
                             Showing {startRow + 1} to {Math.min(startRow + rowsPerPage, invoices.length)} of {invoices.length} entries
                         </p>
                         <nav>
-                            <ul className="inline-flex text-sm border border-gray-300">                                
+                            <ul className="inline-flex text-sm border border-gray-300">
                                 <li>
                                     <button
                                         onClick={() => handlePageChange(currentPage - 1)}
@@ -352,7 +360,7 @@ const Table_DB = () => {
                                         Previous
                                     </button>
                                 </li>
-                                
+
                                 {totalPages > 7 ? (
                                     <>
                                         {/* First Page */}
@@ -408,7 +416,7 @@ const Table_DB = () => {
                                         </li>
                                     ))
                                 )}
-                                
+
                                 <li>
                                     <button
                                         onClick={() => handlePageChange(currentPage + 1)}

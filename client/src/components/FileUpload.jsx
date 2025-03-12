@@ -21,7 +21,7 @@ const InvoiceExtractor = () => {
             if (file.type.startsWith("image/")) {
                 setPreview(URL.createObjectURL(file));
             } else {
-                setPreview(null); // No preview for PDFs
+                setPreview(null); 
             }
         }
     };

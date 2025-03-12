@@ -1,20 +1,24 @@
 const mongoose = require("mongoose");
 
 const InvoiceSchema = new mongoose.Schema({
-    invoice_number: { type: String },
-    date: { type: String },
-    company_name: { type: String },
-    vendor_name: { type: String },
-    tax_amount: { type: String },
-    total: { type: String },
+    invoice_number: String,
+    date: String,
+    company_name: String,
+    vendor_name: String,
+    tax_amount: String,
+    total: String,
+    category: String,
+    isProcess: Boolean,
     products: [
         {
-            product_name: { type: String },
-            quantity: { type: Number },
-            unit_amount: { type: String }
+            product_name: String,
+            quantity: Number,
+            unit_amount: String
         }
     ]
-});
+},
+    { timestamps: true },
+);
 
 
 const Invoice = mongoose.model("Invoice", InvoiceSchema);

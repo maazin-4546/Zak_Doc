@@ -3,12 +3,13 @@ const multer = require("multer");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
-require("dotenv").config();
 const { spawn } = require("child_process");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const connectDB = require("./db/connection");
 const Invoice = require("./models/Invoice");
+const Category = require("./models/Category");
 const invoiceRoutes = require("./routes/invoices");
+require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -45,106 +46,120 @@ const extractInvoiceFromImage = async (imagePath) => {
 
     const userPrompt = `You are an expert in document data extraction. Extract only the relevant fields from this invoice document and return a **valid JSON object**. The user may upload either a **multi-page PDF** or an **image (JPG, PNG, etc.)**, so ensure proper extraction of all details from the entire document.
 
-        The invoice may be in **English, French, or Arabic**. Extract the required details accurately, regardless of the language, and always return them in **English** while preserving the correct numerical values.
-        
-        🚀 **Important Fixes for Arabic, French & English Extraction:**  
-        ✔ Ensure **Company Name** and **Vendor Name** are **not swapped**. Use context-based extraction:  
-          - **Company Name**: Typically appears **at the top**, near the logo/header, or in sections labeled as **"Company Name" (EN), "Nom de l'entreprise" (FR), "اسم الشركة" (AR)**.  
-          - **Vendor Name**: Found in **billing sections**, under "Customer Name," "Billed To," or similar labels: **"Nom du client" (FR), "اسم العميل" (AR)**.  
-        ✔ **Invoice Number** detection improved by verifying it follows common formats (e.g., "INV-XXXX", "FAC-XXXX", numerical sequences).  
-        ✔ Ensure **currency is extracted correctly** alongside amounts without confusion.  
-        ✔ Fix **Arabic text mirroring issues** by handling right-to-left (RTL) text properly.
-        
-        ---
-        
-        ### 1️⃣ **General Fields**
-        - **"invoice_number"**: Extract the invoice number **only if labeled correctly**, ensuring it follows typical patterns such as:
-          - **English**: "Invoice No.", "Bill No.", "Receipt No."
-          - **French**: "Numéro de facture", "Facture No."
-          - **Arabic**: "رقم الفاتورة"
-          - **Avoid extracting order numbers, shipment numbers, or unrelated numeric strings.**
-          
-        - **"date"**: Extract the invoice date, ensuring it is labeled as:
-          - **English**: "Invoice Date"
-          - **French**: "Date de facture"
-          - **Arabic**: "تاريخ الفاتورة"
-          - Ignore unrelated dates like "Shipping Date" or "Due Date."
-        
-        - **"company_name"**: Extract the business/entity issuing the invoice:
-          - Usually appears **at the top** of the document.
-          - Ignore vendor/customer details in this field.
-        
-        - **"vendor_name"**: Extract the buyer/customer name:
-          - Usually appears in sections labeled as **"Billed To," "Customer Name," "Sold To."**
-          - Ignore company details in this field.
-        
-        ---
-        
-        ### 2️⃣ **Amount-Related Fields (Flexible Tax Handling)**
-        - **"tax_amount"**: Extract all applicable taxes.
-          - **If a single tax exists**, return it as a **string** (e.g., "₹2,974.27").
-          - **If multiple tax types exist**, return them as a **structured string** by concatenating tax types with their values, ensuring JSON validity.
-          - **Example Outputs:**
-            -json
-            "tax_amount": "₹2,974.27"            
-            OR  
-            -json
-            "tax_amount": "CGST: ₹117.40, SGST: ₹117.40, IGST: ₹0.00"            
-          - **Ensure flexibility in data types** to avoid validation errors.
-        
-        - **"total"**: The **final amount** payable, including tax.
-          - **Ensure the amount includes the correct currency.**
-          - **Example Output:**  
-            -json
-            "total": "₹13715.52"                    
-        ---
-        
-        ### 3️⃣ **Products Section**
-        - **"products"**: Extract all items with:
-          - **"product_name"**: Preserve exact item descriptions.
-          - **"quantity"**: Extract only the **numeric value** from the quantity field. If the quantity contains units (e.g., "12 Nos", "15 Pcs"), remove non-numeric characters and return only the number.
-          - **Example Outputs:**
-            -json
-            "quantity": 12            
-            -json
-            "quantity": 15            
-          - **"unit_amount"**: Ensure amount **includes currency**.
-          - **Example Output:**
-            -json
-            "unit_amount": "$9999"            
-            
-        ---
-        
-        ### 4️⃣ **Multi-Page PDF Handling**
-        - If the document is a **multi-page PDF**, extract details **across all pages**.
-        - Ensure the output remains **consistent and structured**.
-        
-        ---
-        
-        ### 5️⃣ **Data Handling**
-        ✔ **Avoid Field Swapping**: Ensure company/vendor names are extracted correctly.  
-        ✔ **Prevent Incorrect Invoice Number Extraction**: Verify labels and formats.  
-        ✔ **Fix Arabic Mirroring Issues**: Handle RTL text properly.  
-        ✔ **Ensure JSON Validity**: No markdown, return only structured JSON.  
-        ✔ **Flexible Tax Handling**: Convert multi-tax objects into a structured string format to prevent validation errors.
-        ✔ **Ensure Numeric Quantity Extraction**: Convert quantity values to **numbers only** by removing unit labels like "Nos", "Pcs", etc.
-        
-        🚀 **Expected Output Example:**        
-        {
-            "invoice_number": "INV-12345",
-            "date": "2024-02-20",
-            "company_name": "Saffron Design",
-            "vendor_name": "Priya Chopra",
-            "tax_amount": "CGST: ₹117.40, SGST: ₹117.40, IGST: ₹0.00",
-            "total": "₹13715.52",
-            "products": [
-                { "product_name": "Frontend design restructure", "quantity": 12, "unit_amount": "$9999" },
-                { "product_name": "Backend API setup", "quantity": 15, "unit_amount": "€3000" }
-            ]
-        }        
-        
-        Return **only JSON output**, with no explanations or additional text.`;
+    The invoice may be in **English or Arabic**. Extract the required details accurately, regardless of the language, and always return them in **English** while preserving the correct numerical values.
+    
+    🚀 **Important Fixes for Arabic & English Extraction:**  
+    ✔ Ensure **Company Name** and **Vendor Name** are **not swapped**. Use context-based extraction:  
+      - **Company Name**: Typically appears **at the top**, near the logo/header, or in sections labeled as **"Company Name" (EN), "اسم الشركة" (AR)**.  
+      - **Vendor Name**: Found in **billing sections**, under "Customer Name," "Billed To," or similar labels: **"اسم العميل" (AR)**.  
+    ✔ **Invoice Number** detection improved by verifying it follows common formats (e.g., "INV-XXXX", "FAC-XXXX", numerical sequences).  
+    ✔ Ensure **currency is extracted correctly** alongside amounts without confusion.  
+    ✔ Fix **Arabic text mirroring issues** by handling right-to-left (RTL) text properly.
+    ✔ **Categorize the invoice based on its details**: Extract the category to determine the nature of the expense (e.g., Travel & Transportation, Shopping, Food & Beverages, Shopping & Retail, Office & Business Expenses, Medical & Healthcare, Housing & Rent, etc.).
+    
+    ---
+    
+    ### 1️⃣ **General Fields**
+    - **"invoice_number"**: Extract the invoice number **only if labeled correctly**, ensuring it follows typical patterns such as:
+      - **English**: "Invoice No.", "Bill No.", "Receipt No."
+      - **Arabic**: "رقم الفاتورة"
+      - **Avoid extracting order numbers, shipment numbers, or unrelated numeric strings.**
+      
+    - **"date"**: Extract the invoice date, ensuring it is labeled as:
+      - **English**: "Invoice Date"
+      - **Arabic**: "تاريخ الفاتورة"
+      - Ignore unrelated dates like "Shipping Date" or "Due Date."
+    
+    - **"company_name"**: Extract the business/entity issuing the invoice:
+      - Usually appears **at the top** of the document.
+      - Ignore vendor/customer details in this field.
+    
+    - **"vendor_name"**: Extract the buyer/customer name:
+      - Usually appears in sections labeled as **"Billed To," "Customer Name," "Sold To."**
+      - Ignore company details in this field.
+    
+    - **"category"**: Extract the **category of the invoice** based on business type, vendor name, or purchased items.
+      - Possible categories: **Travel & Transportation, Shopping, Food & Beverages, Shopping & Retail, Office & Business Expenses, Medical & Healthcare, Housing & Rent, etc.**
+      - **Example Output:**
+        --json
+    "category": "Food & Beverages"
+      
+    
+    ---
+    
+    ### 2️⃣ **Amount-Related Fields (Flexible Tax Handling)**
+    - **"tax_amount"**: Extract all applicable taxes.
+      - **If a single tax exists**, return it as a **string** (e.g., "₹2,974.27").
+      - **If multiple tax types exist**, return them as a **structured string** by concatenating tax types with their values, ensuring JSON validity.
+      - **Example Outputs:**
+        --json
+    "tax_amount": "₹2,974.27"      
+        OR  
+        --json
+    "tax_amount": "CGST: ₹117.40, SGST: ₹117.40, IGST: ₹0.00"
 
+      - **Ensure flexibility in data types** to avoid validation errors.
+    
+    - **"total"**: The **final amount** payable, including tax.
+      - **Ensure the amount includes the correct currency.**
+      - **Example Output:**  
+        --json
+    "total": "₹13715.52"
+      
+    
+    ---
+    
+    ### 3️⃣ **Products Section**
+    - **"products"**: Extract all items with:
+      - **"product_name"**: Preserve exact item descriptions.
+      - **"quantity"**: Extract only the **numeric value** from the quantity field. If the quantity contains units (e.g., "12 Nos", "15 Pcs"), remove non-numeric characters and return only the number.
+      - **Example Outputs:**
+        --json
+    "quantity": 12
+      
+        --json
+    "quantity": 15
+      
+      - **"unit_amount"**: Ensure amount **includes currency**.
+      - **Example Output:**
+        --json
+    "unit_amount": "$9999"
+      
+        
+    ---
+    
+    ### 4️⃣ **Multi-Page PDF Handling**
+    - If the document is a **multi-page PDF**, extract details **across all pages**.
+    - Ensure the output remains **consistent and structured**.
+    
+    ---
+    
+    ### 5️⃣ **Data Handling**
+    ✔ **Avoid Field Swapping**: Ensure company/vendor names are extracted correctly.  
+    ✔ **Prevent Incorrect Invoice Number Extraction**: Verify labels and formats.  
+    ✔ **Fix Arabic Mirroring Issues**: Handle RTL text properly.  
+    ✔ **Ensure JSON Validity**: No markdown, return only structured JSON.  
+    ✔ **Flexible Tax Handling**: Convert multi-tax objects into a structured string format to prevent validation errors.
+    ✔ **Ensure Numeric Quantity Extraction**: Convert quantity values to **numbers only** by removing unit labels like "Nos", "Pcs", etc.
+    ✔ **Classify the Invoice into a Relevant Category**: Extract and assign an appropriate category based on vendor name, company name, and purchased items.
+    
+    🚀 **Expected Output Example:**
+    --json
+    {
+      "invoice_number": "INV-12345",
+        "date": "2024-02-20",
+          "company_name": "Saffron Design",
+            "vendor_name": "Priya Chopra",
+              "category": "Food & Beverages",
+                "tax_amount": "CGST: ₹117.40, SGST: ₹117.40, IGST: ₹0.00",
+                  "total": "₹13715.52",
+                    "products": [
+                      { "product_name": "Frontend design restructure", "quantity": 12, "unit_amount": "$9999" },
+                      { "product_name": "Backend API setup", "quantity": 15, "unit_amount": "€3000" }
+                    ]
+    }    
+    
+    Return **only JSON output**, with no explanations or additional text.`;
 
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [...imageParts, { text: userPrompt }] }],
@@ -206,28 +221,27 @@ const extractInvoiceFromText = async (pdfText) => {
 
     const userPrompt = `You are an expert in document data extraction. Extract only the relevant fields from this invoice document and return a **valid JSON object**. The user may upload either a **multi-page PDF** or an **image (JPG, PNG, etc.)**, so ensure proper extraction of all details from the entire document.
 
-    The invoice may be in **English, French, or Arabic**. Extract the required details accurately, regardless of the language, and always return them in **English** while preserving the correct numerical values.
+    The invoice may be in **English or Arabic**. Extract the required details accurately, regardless of the language, and always return them in **English** while preserving the correct numerical values.
     
-    🚀 **Important Fixes for Arabic, French & English Extraction:**  
+    🚀 **Important Fixes for Arabic & English Extraction:**  
     ✔ Ensure **Company Name** and **Vendor Name** are **not swapped**. Use context-based extraction:  
-      - **Company Name**: Typically appears **at the top**, near the logo/header, or in sections labeled as **"Company Name" (EN), "Nom de l'entreprise" (FR), "اسم الشركة" (AR)**.  
-      - **Vendor Name**: Found in **billing sections**, under "Customer Name," "Billed To," or similar labels: **"Nom du client" (FR), "اسم العميل" (AR)**.  
+      - **Company Name**: Typically appears **at the top**, near the logo/header, or in sections labeled as **"Company Name" (EN), "اسم الشركة" (AR)**.  
+      - **Vendor Name**: Found in **billing sections**, under "Customer Name," "Billed To," or similar labels: **"اسم العميل" (AR)**.  
     ✔ **Invoice Number** detection improved by verifying it follows common formats (e.g., "INV-XXXX", "FAC-XXXX", numerical sequences).  
     ✔ Ensure **currency is extracted correctly** alongside amounts without confusion.  
     ✔ Fix **Arabic text mirroring issues** by handling right-to-left (RTL) text properly.
+    ✔ **Categorize the invoice based on its details**: Extract the category to determine the nature of the expense (e.g., Travel & Transportation, Shopping, Food & Beverages, Shopping & Retail, Office & Business Expenses, Medical & Healthcare, Housing & Rent, etc.).
     
     ---
     
     ### 1️⃣ **General Fields**
     - **"invoice_number"**: Extract the invoice number **only if labeled correctly**, ensuring it follows typical patterns such as:
       - **English**: "Invoice No.", "Bill No.", "Receipt No."
-      - **French**: "Numéro de facture", "Facture No."
       - **Arabic**: "رقم الفاتورة"
       - **Avoid extracting order numbers, shipment numbers, or unrelated numeric strings.**
       
     - **"date"**: Extract the invoice date, ensuring it is labeled as:
       - **English**: "Invoice Date"
-      - **French**: "Date de facture"
       - **Arabic**: "تاريخ الفاتورة"
       - Ignore unrelated dates like "Shipping Date" or "Due Date."
     
@@ -239,6 +253,13 @@ const extractInvoiceFromText = async (pdfText) => {
       - Usually appears in sections labeled as **"Billed To," "Customer Name," "Sold To."**
       - Ignore company details in this field.
     
+    - **"category"**: Extract the **category of the invoice** based on business type, vendor name, or purchased items.
+      - Possible categories: **Travel & Transportation, Shopping, Food & Beverages, Shopping & Retail, Office & Business Expenses, Medical & Healthcare, Housing & Rent, etc.**
+      - **Example Output:**
+        --json
+    "category": "Food & Beverages"
+      
+    
     ---
     
     ### 2️⃣ **Amount-Related Fields (Flexible Tax Handling)**
@@ -246,18 +267,21 @@ const extractInvoiceFromText = async (pdfText) => {
       - **If a single tax exists**, return it as a **string** (e.g., "₹2,974.27").
       - **If multiple tax types exist**, return them as a **structured string** by concatenating tax types with their values, ensuring JSON validity.
       - **Example Outputs:**
-        -json
-        "tax_amount": "₹2,974.27"            
+        --json
+    "tax_amount": "₹2,974.27"      
         OR  
-        -json
-        "tax_amount": "CGST: ₹117.40, SGST: ₹117.40, IGST: ₹0.00"            
+        --json
+    "tax_amount": "CGST: ₹117.40, SGST: ₹117.40, IGST: ₹0.00"
+
       - **Ensure flexibility in data types** to avoid validation errors.
     
     - **"total"**: The **final amount** payable, including tax.
       - **Ensure the amount includes the correct currency.**
       - **Example Output:**  
-        -json
-        "total": "₹13715.52"                    
+        --json
+    "total": "₹13715.52"
+      
+    
     ---
     
     ### 3️⃣ **Products Section**
@@ -265,14 +289,17 @@ const extractInvoiceFromText = async (pdfText) => {
       - **"product_name"**: Preserve exact item descriptions.
       - **"quantity"**: Extract only the **numeric value** from the quantity field. If the quantity contains units (e.g., "12 Nos", "15 Pcs"), remove non-numeric characters and return only the number.
       - **Example Outputs:**
-        -json
-        "quantity": 12            
-        -json
-        "quantity": 15            
+        --json
+    "quantity": 12
+      
+        --json
+    "quantity": 15
+      
       - **"unit_amount"**: Ensure amount **includes currency**.
       - **Example Output:**
-        -json
-        "unit_amount": "$9999"            
+        --json
+    "unit_amount": "$9999"
+      
         
     ---
     
@@ -289,24 +316,27 @@ const extractInvoiceFromText = async (pdfText) => {
     ✔ **Ensure JSON Validity**: No markdown, return only structured JSON.  
     ✔ **Flexible Tax Handling**: Convert multi-tax objects into a structured string format to prevent validation errors.
     ✔ **Ensure Numeric Quantity Extraction**: Convert quantity values to **numbers only** by removing unit labels like "Nos", "Pcs", etc.
+    ✔ **Classify the Invoice into a Relevant Category**: Extract and assign an appropriate category based on vendor name, company name, and purchased items.
     
-    🚀 **Expected Output Example:**        
+    🚀 **Expected Output Example:**
+    --json
     {
-        "invoice_number": "INV-12345",
+      "invoice_number": "INV-12345",
         "date": "2024-02-20",
-        "company_name": "Saffron Design",
-        "vendor_name": "Priya Chopra",
-        "tax_amount": "CGST: ₹117.40, SGST: ₹117.40, IGST: ₹0.00",
-        "total": "₹13715.52",
-        "products": [
-            { "product_name": "Frontend design restructure", "quantity": 12, "unit_amount": "$9999" },
-            { "product_name": "Backend API setup", "quantity": 15, "unit_amount": "€3000" }
-        ]
-    }        
-  
-    **Text Input:** ${pdfText}
-    Return **only JSON output**, with no explanations or additional text.`;
-
+          "company_name": "Saffron Design",
+            "vendor_name": "Priya Chopra",
+              "category": "Food & Beverages",
+                "tax_amount": "CGST: ₹117.40, SGST: ₹117.40, IGST: ₹0.00",
+                  "total": "₹13715.52",
+                    "products": [
+                      { "product_name": "Frontend design restructure", "quantity": 12, "unit_amount": "$9999" },
+                      { "product_name": "Backend API setup", "quantity": 15, "unit_amount": "€3000" }
+                    ]
+    }    
+    
+    Return **only JSON output**, with no explanations or additional text.  
+    
+    ** Text Input:** ${pdfText} `;
 
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: userPrompt }] }],
@@ -368,16 +398,32 @@ app.post("/extract", upload.single("file"), async (req, res) => {
       vendor_name: extractedData.vendor_name || null,
       tax_amount: extractedData.tax_amount || 0,
       total: extractedData.total,
-      products: extractedData.products
+      products: extractedData.products,
+      category: extractedData.category,
+      isProcess: true,
     });
 
     await invoice.save();
 
-    res.json({ success: true, message: "Invoice data saved successfully!", data: invoice });
+    // Update or Insert Category in the Category Table
+    const existingCategory = await Category.findOne({ category: extractedData.category });
+    if (existingCategory) {
+      existingCategory.count += 1;
+      await existingCategory.save();
+    } else {
+      const newCategory = new Category({
+        category: extractedData.category,
+        count: 1,
+      });
+      await newCategory.save();
+    }
+
+    res.json({ success: true, message: "Invoice data and category updated successfully!", data: invoice });
   } catch (error) {
     console.error("Error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+app.listen(PORT, () => console.log(`Server running on port ${PORT} `));
