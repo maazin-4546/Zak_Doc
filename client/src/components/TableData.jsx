@@ -128,6 +128,7 @@ const Table_DB = () => {
             "Company Name",
             "Vendor Name",
             "Products",
+            "Category",
             "Quantity",
             "Unit Amount",
             "Tax Amount",
@@ -158,10 +159,11 @@ const Table_DB = () => {
                 cells[2]?.textContent.trim() || "null",
                 cells[3]?.textContent.trim() || "null",
                 products.join("\n"),
+                cells[5]?.textContent.trim() || "null",
                 quantities.join("\n"),
                 unitAmounts.join("\n"),
-                cells[7]?.textContent.trim() || "₹0",
                 cells[8]?.textContent.trim() || "₹0",
+                cells[9]?.textContent.trim() || "₹0",
             ];
         });
 
