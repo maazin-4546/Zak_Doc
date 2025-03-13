@@ -1,61 +1,119 @@
         const userPrompt = `You are an expert in document data extraction. Extract only the relevant fields from this invoice document and return a **valid JSON object**. The user may upload either a **multi-page PDF** or an **image (JPG, PNG, etc.)**, so ensure proper extraction of all details from the entire document.
 
-        The invoice may be in **English, French, or Arabic**. Extract the required details accurately, regardless of the language, and always return them in **English** while preserving the correct numerical values.
-
-        1️⃣ **General Fields**:
-        - "invoice_number": The unique identifier assigned to the invoice or bill. This can be labeled as "Invoice Number," "Bill Number," "Receipt Number," or similar terms in **English ("Invoice No."), French ("Numéro de facture"), or Arabic ("رقم الفاتورة")**. It is typically found at the top of the invoice or near billing details.
-        - "date": The official invoice date when the bill was issued. This should strictly refer to the "Invoice Date" and should not be confused with "Order Date," "Shipping Date," or "Due Date." The label may be in **English ("Invoice Date"), French ("Date de facture"), or Arabic ("تاريخ الفاتورة")**. It can appear in formats like **DD/MM/YYYY, MM/DD/YYYY**, or other standard date formats.
-        - "company_name": The name of the business or entity that issued the bill. This is the **billing company** and not the vendor (seller) or customer. It may be labeled in **English ("Company Name"), French ("Nom de l'entreprise"), or Arabic ("اسم الشركة")**. It is usually found in the header section near the company's address and logo.
-        - "vendor_name": The name of the individual or business purchasing the product or service. This may be labeled as **"Customer Name" (English), "Nom du client" (French), or "اسم العميل" (Arabic)**. It refers to the entity responsible for the payment and is usually located in the billing section of the invoice.
-        - "tax_amount": The total tax applied to the invoice. This may be labeled as **"Tax Amount" (English), "Montant de la taxe" (French), or "مبلغ الضريبة" (Arabic)**. It can appear under multiple labels such as "GST," "VAT," "SGST," "CGST," or "Taxable Amount." If multiple tax types are present, extract them separately with corresponding labels (e.g., **SGST: 9%, CGST: 9%**).
-        - "total": The final amount payable by the customer after adding all product prices and applicable taxes. This is often labeled as **"Grand Total" (English), "Montant total" (French), or "المبلغ الإجمالي" (Arabic)**. It is usually found at the bottom of the invoice in a bold or highlighted format.
+        The invoice may be in **English or Arabic**. Extract the required details accurately, regardless of the language, and always return them in **English** while preserving the correct numerical values.
         
-        2️⃣ **Products Section**:
-        - "products": A list of objects, each containing:
-            - "product_name": The **exact product or service name** as mentioned on the invoice. It can be labeled as **"Item Name," "Product," "Service," "Description," or "Details."**  
-              - **If a number appears at the end of a product name, do not treat it as a quantity.** It should be part of the product name unless explicitly listed in the "Quantity" column.
-              - Example: "Service or Product Description 5" should be extracted as "Service or Product Description 5", and **not** as a product name "Service or Product Description" with quantity 5.  
-            - "quantity": Extract the **number of units purchased** only from the **"Quantity" column.**  
-              - **Do not infer quantity from product names.**  
-              - Look for labels like **"Qty," "Quantity," "Units," "QTY," or similar terms.** In French, this may be **"Quantité," "Unité," or "Qté"**, and in Arabic, **"الكمية" or "عدد الوحدات"**.  
-              - If no quantity is explicitly provided, return **null**.  
-            - "unit_amount": The **price per unit of the product/service**. Extract from labels such as **"Unit Price," "Rate," "Per Item Cost," or "Price Each."**  
-              - In French, this may be **"Prix unitaire"** or **"Tarif"**, and in Arabic **"سعر الوحدة"**.  
-              - Ensure **numerical accuracy** and **exclude currency symbols** unless explicitly needed.  
-            - "line_total": The **total price per product** (unit_amount × quantity). Extract from fields labeled **"Total," "Line Total," "Subtotal," "Amount," or "Price."**  
-              - If missing, return **null**.  
-            - If the invoice includes **discounts, taxes, or additional charges per product**, extract them as separate fields if present.  
-            - **Ensure product listings are extracted from tables, structured item lists, or descriptions.** If a table is split across multiple pages, merge the extracted products into a single list.  
-            - **If an invoice contains multiple sections (e.g., Itemized Products, Services, Additional Charges), extract all relevant product/service entries in the same "products" array.**  
-            - **Avoid extracting headers, footers, totals, or non-product information.**  
+        🚀 **Important Fixes for Arabic & English Extraction:**  
+        ✔ Ensure **Company Name** and **Vendor Name** are **not swapped**. Use context-based extraction:  
+          - **Company Name**: Typically appears **at the top**, near the logo/header, or in sections labeled as **"Company Name" (EN), "اسم الشركة" (AR)**.  
+          - **Vendor Name**: Found in **billing sections**, under "Customer Name," "Billed To," or similar labels: **"اسم العميل" (AR)**.  
+        ✔ **Invoice Number** detection improved by verifying it follows common formats (e.g., "INV-XXXX", "FAC-XXXX", numerical sequences).  
+        ✔ Ensure **currency is extracted correctly** alongside amounts without confusion.  
+        ✔ Fix **Arabic text mirroring issues** by handling right-to-left (RTL) text properly.
+        ✔ **Categorize the invoice based on its details**: Extract the category to determine the nature of the expense (e.g., Travel & Transportation, Shopping, Food & Beverages, Shopping & Retail, Office & Business Expenses, Medical & Healthcare, Housing & Rent, etc.).
         
-        3️⃣ **Multi-Page PDF Handling**:
-        - If the uploaded document is a **multi-page PDF**, extract relevant information from **all pages**.
-        - Ensure that all fields (including "products") are collected across multiple pages, and **do not miss** any details due to page breaks.
-        - Combine extracted details from different pages into a **single structured JSON object**.
+        ---
         
-        4️⃣ **Data Handling**:
-        - If a field **does not exist**, return **null**.
-        - **Ensure JSON validity**, no Markdown formatting.
-        - Return data in **proper JSON format**, enclosed in curly braces { }.
-        - If multiple products exist, return all in the "products" array.
-        - Do **not** return unnecessary details.
+        ### 1️⃣ **General Fields**
+        - **"invoice_number"**: Extract the invoice number **only if labeled correctly**, ensuring it follows typical patterns such as:
+          - **English**: "Invoice No.", "Bill No.", "Receipt No."
+          - **Arabic**: "رقم الفاتورة"
+          - **Avoid extracting order numbers, shipment numbers, or unrelated numeric strings.**
+          
+        - **"date"**: Extract the invoice date, ensuring it is labeled as:
+          - **English**: "Invoice Date"
+          - **Arabic**: "تاريخ الفاتورة"
+          - Ignore unrelated dates like "Shipping Date" or "Due Date."
+        
+        - **"company_name"**: Extract the business/entity issuing the invoice:
+          - Usually appears **at the top** of the document.
+          - Ignore vendor/customer details in this field.
+        
+        - **"vendor_name"**: Extract the buyer/customer name:
+          - Usually appears in sections labeled as **"Billed To," "Customer Name," "Sold To."**
+          - Ignore company details in this field.
+        
+        - **"category"**: Extract the **category of the invoice** based on business type, vendor name, or purchased items.
+          - Possible categories: **Travel & Transportation, Shopping, Food & Beverages, Shopping & Retail, Office & Business Expenses, Medical & Healthcare, Housing & Rent, etc.**
+          - **Example Output:**
+            --json
+        "category": "Food & Beverages"
+          
+        
+        ---
+        
+        ### 2️⃣ **Amount-Related Fields (Flexible Tax Handling)**
+        - **"tax_amount"**: Extract all applicable taxes.
+          - **If a single tax exists**, return it as a **string** (e.g., "₹2,974.27").
+          - **If multiple tax types exist**, return them as a **structured string** by concatenating tax types with their values, ensuring JSON validity.
+          - **Example Outputs:**
+            --json
+        "tax_amount": "₹2,974.27"      
+            OR  
+            --json
+        "tax_amount": "CGST: ₹117.40, SGST: ₹117.40, IGST: ₹0.00"
+    
+          - **Ensure flexibility in data types** to avoid validation errors.
+        
+        - **"total"**: The **final amount** payable, including tax.
+          - **Ensure the amount includes the correct currency.**
+          - **Example Output:**  
+            --json
+        "total": "₹13715.52"
+          
+        
+        ---
+        
+        ### 3️⃣ **Products Section**
+        - **"products"**: Extract all items with:
+          - **"product_name"**: Preserve exact item descriptions.
+          - **"quantity"**: Extract only the **numeric value** from the quantity field. If the quantity contains units (e.g., "12 Nos", "15 Pcs"), remove non-numeric characters and return only the number.
+          - **Example Outputs:**
+            --json
+        "quantity": 12
+          
+            --json
+        "quantity": 15
+          
+          - **"unit_amount"**: Ensure amount **includes currency**.
+          - **Example Output:**
+            --json
+        "unit_amount": "$9999"
+          
+            
+        ---
+        
+        ### 4️⃣ **Multi-Page PDF Handling**
+        - If the document is a **multi-page PDF**, extract details **across all pages**.
+        - Ensure the output remains **consistent and structured**.
+        
+        ---
+        
+        ### 5️⃣ **Data Handling**
+        ✔ **Avoid Field Swapping**: Ensure company/vendor names are extracted correctly.  
+        ✔ **Prevent Incorrect Invoice Number Extraction**: Verify labels and formats.  
+        ✔ **Fix Arabic Mirroring Issues**: Handle RTL text properly.  
+        ✔ **Ensure JSON Validity**: No markdown, return only structured JSON.  
+        ✔ **Flexible Tax Handling**: Convert multi-tax objects into a structured string format to prevent validation errors.
+        ✔ **Ensure Numeric Quantity Extraction**: Convert quantity values to **numbers only** by removing unit labels like "Nos", "Pcs", etc.
+        ✔ **Classify the Invoice into a Relevant Category**: Extract and assign an appropriate category based on vendor name, company name, and purchased items.
         
         🚀 **Expected Output Example:**
+        --json
         {
-            "invoice_number": "INV-12345",
+          "invoice_number": "INV-12345",
             "date": "2024-02-20",
-            "company_name": "Saffron Design",
-            "vendor_name": "Priya Chopra",
-            "tax_amount": 1469.52,
-            "total": 13715.52,
-            "products": [
-                { "product_name": "Frontend design restructure", "quantity": 1, "unit_amount": 9999 },
-                { "product_name": "Backend API setup", "quantity": 2, "unit_amount": 3000 }
-            ]
-        }
+              "company_name": "Saffron Design",
+                "vendor_name": "Priya Chopra",
+                  "category": "Food & Beverages",
+                    "tax_amount": "CGST: ₹117.40, SGST: ₹117.40, IGST: ₹0.00",
+                      "total": "₹13715.52",
+                        "products": [
+                          { "product_name": "Frontend design restructure", "quantity": 12, "unit_amount": "$9999" },
+                          { "product_name": "Backend API setup", "quantity": 15, "unit_amount": "€3000" }
+                        ]
+        }    
         
-        Return only JSON output with no explanations or additional text.`;
+        Return **only JSON output**, with no explanations or additional text.`;
 
 
 

@@ -3,30 +3,17 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
-import "../App.css"
+import UpdateInvoiceModal from "./UpdateModal"; // Import the modal component
+import "../App.css";
 
 const InvoiceExtractor = () => {
-
     const [file, setFile] = useState(null);
     const [jsonData, setJsonData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [preview, setPreview] = useState(null);
-    // * Modal code
-    const [isOpen, setIsOpen] = useState(false);
-    const [uploadCompleted, setUploadCompleted] = useState(false);
-    const [invoiceData, setInvoiceData] = useState({
-        invoice_number: "",
-        date: "",
-        company_name: "",
-        vendor_name: "",
-        category: "",
-        tax_amount: "",
-        total: "",
-        products: []
-    });
-
+    const [isOpen, setIsOpen] = useState(false);    
 
     const handleFileChange = (event) => {
         const file = event.target.files[0];
@@ -43,10 +30,9 @@ const InvoiceExtractor = () => {
 
     const handleUpload = async () => {
         if (!file) {
-            alert("Please select an image or PDF file first!");
+            toast.error("Please select a file first!");
             return;
         }
-
         setLoading(true);
         setError(null);
 
@@ -59,11 +45,12 @@ const InvoiceExtractor = () => {
             });
 
             if (response.data.success) {
-                setJsonData(response.data.data);
+                setJsonData(response.data.data);        
+                // console.log("Extracted Data:", JSON.stringify(response.data.data, null, 2));
                 toast.success("Data extracted successfully!", { position: "top-right", autoClose: 3000 });
 
-                setIsOpen(true);
-                setUploadCompleted(true);
+                setIsOpen(true);                
+
             } else {
                 setError("Failed to extract data");
                 toast.error("Failed to extract data", { position: "top-right" });
@@ -75,67 +62,7 @@ const InvoiceExtractor = () => {
         }
 
         setLoading(false);
-    }
-
-    useEffect(() => {
-        if (uploadCompleted) {
-            const fetchLatestInvoice = async () => {
-                try {
-                    const response = await axios.get("http://localhost:5000/api/invoices/latest");
-                    setInvoiceData(response.data.data);
-                } catch (err) {
-                    setError("Failed to fetch invoice");
-                } finally {
-                    setLoading(false);
-                }
-            };
-
-            fetchLatestInvoice();
-            setUploadCompleted(false); // Reset after fetching
-        }
-    }, [uploadCompleted]);
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        try {
-            const updatedData = {};
-
-            // Add invoice-level updates if changed
-            ["invoice_number", "date", "company_name", "vendor_name", "tax_amount", "total", "category"].forEach((key) => {
-                if (invoiceData[key] !== undefined && invoiceData[key] !== "") {
-                    updatedData[key] = invoiceData[key];
-                }
-            });
-
-            // Add product-level updates if changed
-            const updatedProducts = invoiceData.products
-                .filter(product => product._id)  // Ensure products have an ID
-                .map(product => {
-                    const updatedProduct = {};
-                    Object.keys(product).forEach((key) => {
-                        if (product[key] !== undefined && product[key] !== "") {
-                            updatedProduct[key] = product[key];
-                        }
-                    });
-                    return updatedProduct;
-                });
-
-            if (updatedProducts.length > 0) {
-                updatedData.products = updatedProducts;
-            }
-
-            // Send API request
-            await axios.put("http://localhost:5000/api/invoices/latest/product", updatedData);
-            setIsOpen(false)
-            toast.success("Updated Successfully")
-
-        } catch (err) {
-            console.error("Error updating invoice:", err);
-            toast.error("Failed to update invoice");
-        }
     };
-
 
     return (
         <div className="mt-14 flex flex-col items-center justify-center min-h-screen p-6">
@@ -196,160 +123,15 @@ const InvoiceExtractor = () => {
                 )}
             </div>
 
-
             {/* Modal */}
-            {isOpen && (
-                <div className={`scale-up-center fixed inset-0 flex items-center justify-center z-50 bg-opacity-40 backdrop-blur-sm transition-opacity duration-300`}>
-                    <div className="overflow-y-auto relative p-6 w-full max-w-[650px] bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-2xl transition-transform transform">
-                        {/* Modal header */}
-                        <div className="flex items-center justify-between p-4 border-b border-gray-300 dark:border-gray-700">
-                            <h3 className="text-2xl font-bold text-gray-800 dark:text-white">Update Information</h3>
-                            <button
-                                onClick={() => setIsOpen(false)}
-                                className="cursor-pointer text-gray-500 hover:text-gray-900 dark:hover:text-white bg-gray-200 dark:bg-gray-700 rounded-full p-2 transition-colors"
-                            >
-                                <svg className="w-4 h-4" aria-hidden="true" fill="none" viewBox="0 0 14 14">
-                                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        {/* Modal body */}
-                        <div className="p-4">
-                            <form className="space-y-6">
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Invoice Number</label>
-                                        <input
-                                            type="text"
-                                            value={invoiceData.invoice_number}
-                                            onChange={(e) => setInvoiceData({ ...invoiceData, invoice_number: e.target.value })}
-                                            className="w-full p-3 border rounded-lg text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-sm"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Date</label>
-                                        <input
-                                            type="text"
-                                            value={invoiceData.date}
-                                            onChange={(e) => setInvoiceData({ ...invoiceData, date: e.target.value })}
-                                            className="w-full p-3 border rounded-lg text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-sm"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Company Name</label>
-                                        <input
-                                            type="text"
-                                            value={invoiceData.company_name}
-                                            onChange={(e) => setInvoiceData({ ...invoiceData, company_name: e.target.value })}
-                                            className="w-full p-3 border rounded-lg text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-sm"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vendor Name</label>
-                                        <input
-                                            type="text"
-                                            value={invoiceData.vendor_name}
-                                            onChange={(e) => setInvoiceData({ ...invoiceData, vendor_name: e.target.value })}
-                                            className="w-full p-3 border rounded-lg text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-sm"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Category</label>
-                                    <input
-                                        type="text"
-                                        value={invoiceData.category}
-                                        onChange={(e) => setInvoiceData({ ...invoiceData, category: e.target.value })}
-                                        className="w-full p-3 border rounded-lg text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-sm"
-                                    />
-                                </div>
-
-                                {invoiceData.products.map((product, index) => (
-                                    <div key={index} className="grid grid-cols-3 gap-4">
-                                        <div>
-                                            <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Product Name</label>
-                                            <input
-                                                type="text"
-                                                value={product.product_name}
-                                                onChange={(e) => {
-                                                    const updatedProducts = [...invoiceData.products];
-                                                    updatedProducts[index].product_name = e.target.value;
-                                                    setInvoiceData({ ...invoiceData, products: updatedProducts });
-                                                }}
-                                                className="w-full p-3 border rounded-lg text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-sm"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Quantity</label>
-                                            <input
-                                                type="text"
-                                                value={product.quantity}
-                                                onChange={(e) => {
-                                                    const updatedProducts = [...invoiceData.products];
-                                                    updatedProducts[index].quantity = e.target.value;
-                                                    setInvoiceData({ ...invoiceData, products: updatedProducts });
-                                                }}
-                                                className="w-full p-3 border rounded-lg text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-sm"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Unit Amount</label>
-                                            <input
-                                                type="text"
-                                                value={product.unit_amount}
-                                                onChange={(e) => {
-                                                    const updatedProducts = [...invoiceData.products];
-                                                    updatedProducts[index].unit_amount = e.target.value;
-                                                    setInvoiceData({ ...invoiceData, products: updatedProducts });
-                                                }}
-                                                className="w-full p-3 border rounded-lg text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-sm"
-                                            />
-                                        </div>
-                                    </div>
-                                ))}
-
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tax Amount</label>
-                                        <input
-                                            type="text"
-                                            value={invoiceData.tax_amount}
-                                            onChange={(e) => setInvoiceData({ ...invoiceData, tax_amount: e.target.value })}
-                                            className="w-full p-3 border rounded-lg text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-sm"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Total</label>
-                                        <input
-                                            type="text"
-                                            value={invoiceData.total}
-                                            onChange={(e) => setInvoiceData({ ...invoiceData, total: e.target.value })}
-                                            className="w-full p-3 border rounded-lg text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-sm"
-                                        />
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={handleSubmit}
-                                    className="w-full text-white bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-semibold rounded-lg text-lg px-5 py-3 shadow-lg transition-transform transform hover:scale-105"
-                                >
-                                    Update
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-            )}
-
+            <UpdateInvoiceModal
+                isOpen={isOpen}
+                onClose={() => setIsOpen(false)}
+                jsonData = {jsonData}
+                setJsonData = {setJsonData}
+            />
         </div>
     );
 };
 
 export default InvoiceExtractor;
-
