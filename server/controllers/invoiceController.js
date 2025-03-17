@@ -30,17 +30,15 @@ const getAllInvoiceData = async (req, res) => {
 const updateInvoiceData = async (req, res) => {
     try {
         const { products, ...updatedFields } = req.body;
-        const { invoiceId } = req.params; // Extract ID from request params
+        const { invoiceId } = req.params; 
 
         if (!invoiceId) return res.status(400).json({ error: "Invoice ID is required" });
 
         const invoice = await Invoice.findById(invoiceId);
         if (!invoice) return res.status(404).json({ error: "Invoice not found" });
-
-        // Update invoice fields dynamically
+        
         Object.assign(invoice, updatedFields);
 
-        // Update product fields if provided
         if (Array.isArray(products)) {
             products.forEach(({ _id, ...productUpdates }) => {
                 const product = invoice.products.id(_id);
@@ -51,12 +49,11 @@ const updateInvoiceData = async (req, res) => {
 
         await invoice.save();
         res.json({ success: true, message: "Invoice updated successfully", data: invoice });
+        
     } catch (error) {
         console.error("Error updating invoice:", error.message);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
-
-
 
 module.exports = { extractInvoice, getAllInvoiceData, updateInvoiceData };

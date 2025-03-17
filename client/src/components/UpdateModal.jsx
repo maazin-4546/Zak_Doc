@@ -1,5 +1,4 @@
 import axios from "axios";
-import { useEffect } from "react";
 import { toast } from "react-toastify";
 
 const UpdateInvoiceModal = ({ jsonData, setJsonData, isOpen, onClose }) => {
@@ -48,8 +47,9 @@ const UpdateInvoiceModal = ({ jsonData, setJsonData, isOpen, onClose }) => {
 
     return (
         <div className="scale-up-center fixed inset-0 flex items-center justify-center z-50 bg-opacity-40 backdrop-blur-sm transition-opacity duration-300">
-            <div className="overflow-y-auto relative p-6 w-full max-w-[650px] bg-gradient-to-r from-gray-100 to-gray-200 rounded-xl shadow-2xl transition-transform transform">
-                {/* Modal header */}
+            <div className="relative p-6 w-full max-w-[650px] bg-gradient-to-r from-gray-100 to-gray-200 rounded-xl shadow-2xl transition-transform transform">
+
+                {/* Modal Header (Fixed) */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-300 dark:border-gray-700">
                     <h3 className="text-3xl font-bold text-cyan-700">Update Information</h3>
                     <button
@@ -62,8 +62,8 @@ const UpdateInvoiceModal = ({ jsonData, setJsonData, isOpen, onClose }) => {
                     </button>
                 </div>
 
-                {/* Modal body */}
-                <div className="p-4">
+                {/* Modal Body with Scrollable Content */}
+                <div className="p-4 max-h-[70vh] overflow-y-auto scroll-smooth">
                     <form className="space-y-6">
                         <div className="grid grid-cols-2 gap-6">
                             <div>
@@ -181,17 +181,21 @@ const UpdateInvoiceModal = ({ jsonData, setJsonData, isOpen, onClose }) => {
                                 />
                             </div>
                         </div>
-
-                        <button
-                            onClick={handleSubmit}
-                            className="cursor-pointer w-full text-white bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-semibold rounded-lg text-lg px-5 py-3 shadow-lg transition-transform transform"
-                        >
-                            Update
-                        </button>
                     </form>
+                </div>
+
+                {/* Modal Footer (Fixed) */}
+                <div className="p-4 border-t border-gray-300">
+                    <button
+                        onClick={handleSubmit}
+                        className="cursor-pointer w-full text-white bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-semibold rounded-lg text-lg px-5 py-3 shadow-lg transition-transform transform"
+                    >
+                        Update
+                    </button>
                 </div>
             </div>
         </div>
+
     );
 };
 

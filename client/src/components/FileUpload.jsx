@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
-import UpdateInvoiceModal from "./UpdateModal"; // Import the modal component
+import UpdateInvoiceModal from "./UpdateModal"; 
 import "../App.css";
 
 const InvoiceExtractor = () => {
+
     const [file, setFile] = useState(null);
     const [jsonData, setJsonData] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -116,11 +117,11 @@ const InvoiceExtractor = () => {
                 {error && <p className="mt-4 text-red-500 text-lg font-medium">{error}</p>}
 
                 {/* Extracted JSON Data */}
-                {jsonData && (
+                {/* {jsonData && (
                     <pre className="mt-6 bg-gray-100 text-gray-700 p-5 rounded-xl text-left w-full max-h-96 overflow-auto border border-gray-300 shadow-md">
                         {JSON.stringify(jsonData, null, 2)}
                     </pre>
-                )}
+                )} */}
             </div>
 
             {/* Modal */}

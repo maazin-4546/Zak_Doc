@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const connectDB = require("./db/connection");
 const invoiceRoutes = require("./routes/invoiceRoutes");
+const userRoutes = require("./routes/userRoutes")
 require("dotenv").config();
 
 const app = express();
@@ -15,5 +16,6 @@ connectDB();
 
 // Routes
 app.use(invoiceRoutes);
+app.use("/user", userRoutes);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

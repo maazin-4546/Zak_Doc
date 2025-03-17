@@ -9,7 +9,6 @@ router.post("/extract", upload.single("file"), extractInvoice);
 // GET all invoices
 router.get("/api/invoices", getAllInvoiceData);
 
-
 // update the latest inserted data
 router.put("/api/invoices/:invoiceId", updateInvoiceData);
 
