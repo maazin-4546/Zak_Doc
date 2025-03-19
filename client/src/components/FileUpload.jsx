@@ -3,7 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
-import UpdateInvoiceModal from "./UpdateModal"; 
+import UpdateInvoiceModal from "./UpdateModal";
 import "../App.css";
 
 const InvoiceExtractor = () => {
@@ -14,11 +14,11 @@ const InvoiceExtractor = () => {
     const [error, setError] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [preview, setPreview] = useState(null);
-    const [isOpen, setIsOpen] = useState(false);    
+    const [isOpen, setIsOpen] = useState(false);
 
     const handleFileChange = (event) => {
         const file = event.target.files[0];
-        if (file) {
+        if (file) {            
             setFile(file);
             setSelectedFile(file);
             if (file.type.startsWith("image/")) {
@@ -34,24 +34,33 @@ const InvoiceExtractor = () => {
             toast.error("Please select a file first!");
             return;
         }
+
         setLoading(true);
         setError(null);
 
         const formData = new FormData();
         formData.append("file", file);
 
+        // Debugging: Check FormData before sending
+        for (let pair of formData.entries()) {
+            console.log(pair[0], pair[1]); // Should log "file" and the file object
+        }
+
+        // Get token from localStorage
+        const token = localStorage.getItem("token");
+
         try {
             const response = await axios.post("http://localhost:5000/extract", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                    Authorization: `Bearer ${token}`,
+                },
             });
 
             if (response.data.success) {
-                setJsonData(response.data.data);        
-                // console.log("Extracted Data:", JSON.stringify(response.data.data, null, 2));
+                setJsonData(response.data.data);
                 toast.success("Data extracted successfully!", { position: "top-right", autoClose: 3000 });
-
-                setIsOpen(true);                
-
+                setIsOpen(true);
             } else {
                 setError("Failed to extract data");
                 toast.error("Failed to extract data", { position: "top-right" });
@@ -128,8 +137,8 @@ const InvoiceExtractor = () => {
             <UpdateInvoiceModal
                 isOpen={isOpen}
                 onClose={() => setIsOpen(false)}
-                jsonData = {jsonData}
-                setJsonData = {setJsonData}
+                jsonData={jsonData}
+                setJsonData={setJsonData}
             />
         </div>
     );

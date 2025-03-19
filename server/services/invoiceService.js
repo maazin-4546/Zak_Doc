@@ -18,68 +18,69 @@ const MODEL_CONFIG = {
 
 
 //* Main function to Process File (PDF or Image)
-const processFile = async (file) => {
-  const filePath = path.resolve(file.path);
+const processFile = async (req) => {
+  if (!req.file) {
+      return { error: "No file uploaded" };
+  }
+
+  console.log("Uploaded File Path:", req.file.path);
+  console.log("User ID:", req.user?.id); // Debugging
+
+  const filePath = path.resolve(req.file.path);
   let extractedData;
 
   try {
-    if (file.mimetype === "application/pdf") {
-      console.log("Processing PDF file...");
-      const extractedText = await extractTextFromPDF(filePath);
-      extractedData = await extractInvoiceFromText(extractedText);
-    } else if (file.mimetype.startsWith("image/")) {
-      console.log("Processing Image file...");
-      extractedData = await extractInvoiceFromImage(filePath);
-    } else {
-      throw new Error("Unsupported file format. Upload a PDF or an image.");
-    }
+      const userId = req.user.id; // Get user ID from req.user
 
-    // Delete uploaded file after processing
-    fs.unlinkSync(filePath);
+      if (!userId) {
+          throw new Error("Unauthorized: User ID missing.");
+      }
 
-    if (extractedData.error) {
-      return extractedData;
-    }
+      if (req.file.mimetype === "application/pdf") {
+          console.log("Processing PDF file...");
+          const extractedText = await extractTextFromPDF(filePath);
+          extractedData = await extractInvoiceFromText(extractedText);
+      } else if (req.file.mimetype.startsWith("image/")) {
+          console.log("Processing Image file...");
+          extractedData = await extractInvoiceFromImage(filePath);
+      } else {
+          throw new Error("Unsupported file format. Upload a PDF or an image.");
+      }
 
-    // Save extracted data to database
-    const invoice = new Invoice({
-      invoice_number: extractedData.invoice_number,
-      date: extractedData.date,
-      company_name: extractedData.company_name,
-      vendor_name: extractedData.vendor_name || null,
-      tax_amount: extractedData.tax_amount || 0,
-      total: extractedData.total,
-      products: extractedData.products,
-      category: extractedData.category,
-      isProcess: true,
-    });
+      // Delete uploaded file after processing
+      fs.unlinkSync(filePath);
 
-    await invoice.save();
+      if (extractedData.error) {
+          return extractedData;
+      }
 
-    // Update or Insert Category in the Category Table
-    const existingCategory = await Category.findOne({ category: extractedData.category });
-    if (existingCategory) {
-      existingCategory.count += 1;
-      await existingCategory.save();
-    } else {
-      const newCategory = new Category({
-        category: extractedData.category,
-        count: 1,
+      // Save extracted data to database with userId
+      const invoice = new Invoice({
+          userId, // Attach userId to invoice
+          invoice_number: extractedData.invoice_number,
+          date: extractedData.date,
+          company_name: extractedData.company_name,
+          vendor_name: extractedData.vendor_name || null,
+          tax_amount: extractedData.tax_amount || 0,
+          total: extractedData.total,
+          products: extractedData.products,
+          category: extractedData.category,
+          isProcess: true,
       });
-      await newCategory.save();
-    }
 
-    return invoice;
+      await invoice.save();
+
+      return invoice;
   } catch (error) {
-    console.error("Error processing file:", error.message);
-    return { error: error.message };
+      console.error("Error processing file:", error.message);
+      return { error: error.message };
   }
 };
 
 // **Extract text from PDF using Python script**
 const extractTextFromPDF = (pdfPath) => {
   return new Promise((resolve, reject) => {
-    
+
     const pythonProcess = spawn("python", ["pdf_text_extractor.py", pdfPath]);
 
     let extractedText = "";

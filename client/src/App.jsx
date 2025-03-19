@@ -1,15 +1,40 @@
-import Navbar from './components/Navbar'
-import InvoiceExtractor from './components/FileUpload'
-import Table_DB from './components/TableData'
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import RegisterForm from "./components/RegisterForm";
+import LoginForm from "./components/LoginForm";
+import Home from "./components/Home";
+import ProtectedRoute from "./middleware/ProtectedRoute";
+
+// Mazinabd@4546
 
 const App = () => {
-  return (
-    <div className='bg-gradient-to-br from-blue-50 to-blue-100'>
-      <Navbar />
-      <InvoiceExtractor />
-      <Table_DB />
-    </div>
-  )
-}
 
-export default App
+  const [token, setToken] = useState(localStorage.getItem("token"));
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setToken(localStorage.getItem("token"));
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  return (
+
+    <div>
+      <Routes>
+        {/* Public Routes: Accessible only if NOT logged in */}
+        <Route path="/login" element={!token ? <LoginForm /> : <Navigate to="/" replace />} />
+        <Route path="/register" element={!token ? <RegisterForm /> : <Navigate to="/" replace />} />
+
+        {/* Protected Route: Accessible only if logged in */}
+        <Route path="/" element={<ProtectedRoute element={<Home />} />} />
+      </Routes>
+    </div>
+
+  );
+};
+
+export default App;
+

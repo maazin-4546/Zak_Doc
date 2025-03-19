@@ -18,15 +18,28 @@ const Table_DB = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await axios.get("http://localhost:5000/api/invoices");
-                setInvoices(response.data);
+                // Get token from localStorage
+                const token = localStorage.getItem("token");
+
+                if (!token) {
+                    console.error("No token found in localStorage");
+                    return;
+                }
+
+                const response = await axios.get("http://localhost:5000/api/user-invoices", {
+                    headers: {
+                        Authorization: `Bearer ${token}`, // Send token in headers
+                    },
+                });
+
+                setInvoices(response.data.data); // Make sure you're setting the correct data
             } catch (error) {
-                console.error("Error fetching invoice data:", error);
+                console.error("Error fetching invoice data:", error.response?.data || error.message);
             }
         };
+
         fetchData();
     }, []);
-
 
     //* seach query
     const filteredRows = invoices.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
@@ -217,8 +230,8 @@ const Table_DB = () => {
 
     return (
         <div className='p-2 md:p-6'>
-            <div className="flex justify-center items-center p-2 md:p-0">
-                <div className="bg-white w-full relative overflow-x-auto shadow-md py-4 p-2 md:p-6 mt-6 md:mt-8">
+            <div className="flex justify-end items-center p-2 md:p-0">
+                <div className="bg-white md:w-[79%] relative overflow-x-auto shadow-md py-4 p-2 md:p-6 mt-6 md:mt-8">
 
                     {/* Download Options */}
                     <div className='flex flex-col md:flex-row items-center justify-center md:justify-between py-4 md:py-0 mb-2'>
@@ -301,7 +314,10 @@ const Table_DB = () => {
                                                 className="even:bg-gray-100 odd:bg-gray-50 hover:bg-blue-100 hover:scale-101 transition-all duration-300"
                                             >
                                                 <td className="px-6 py-4 border border-gray-300 text-center">{invoice.invoice_number || "null"}</td>
-                                                <td className="px-6 py-4 border border-gray-300 text-center">{invoice.date || "null"}</td>
+                                                <td className="px-6 py-4 border border-gray-300 text-center">
+                                                    {invoice.date ? new Date(invoice.date).toLocaleDateString("en-GB") : "null"}
+                                                </td>
+
                                                 <td className="px-6 py-4 border border-gray-300">{invoice.company_name || "null"}</td>
                                                 <td className="px-6 py-4 border border-gray-300">{invoice.vendor_name || "null"}</td>
                                                 <td className="px-6 py-4 border border-gray-300">
