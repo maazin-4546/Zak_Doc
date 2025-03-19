@@ -18,7 +18,7 @@ const InvoiceExtractor = () => {
 
     const handleFileChange = (event) => {
         const file = event.target.files[0];
-        if (file) {            
+        if (file) {
             setFile(file);
             setSelectedFile(file);
             if (file.type.startsWith("image/")) {
@@ -75,7 +75,8 @@ const InvoiceExtractor = () => {
     };
 
     return (
-        <div className="mt-14 flex flex-col items-center justify-center min-h-screen p-6">
+        <div className="flex flex-col items-center justify-center pt-28">
+
             <ToastContainer />
             <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-lg text-center border border-gray-200">
                 <h2 className="text-3xl font-extrabold text-cyan-700 mb-6 tracking-wide">Invoice Data Extraction</h2>

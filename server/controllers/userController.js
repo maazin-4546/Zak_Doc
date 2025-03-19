@@ -128,7 +128,7 @@ const handleForgotPassword = async (req, res) => {
         });
 
         // Create reset link
-        const resetLink = `http://localhost:5000/reset-password/${token}`;
+        const resetLink = `http://localhost:5173/reset-password/${token}`;
 
         // Configure Nodemailer Transporter
         const transporter = nodemailer.createTransport({
