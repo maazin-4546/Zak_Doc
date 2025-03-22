@@ -10,6 +10,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors({
     origin: "http://localhost:5173",  // Allow frontend origin
+    origin: "http://localhost:5174",  // Allow frontend origin
     credentials: true, // Allow cookies & authorization headers
 }));
 app.use(express.json());

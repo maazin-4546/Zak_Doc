@@ -13,7 +13,7 @@ const {
 const authMiddleware = require("../middleware/authMiddleware")
 const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
-const Invoice = require("../models/Invoice");
+
 //* Path Parameters
 
 router.post("/extract", authMiddleware, upload.single("file"), extractInvoice);

@@ -6,7 +6,7 @@ const nodemailer = require("nodemailer")
 const registerSchema = require("../helpers/registerValidations")
 
 
-const handleRegisterUser = async (req, res) => {
+const RegisterUser = async (req, res) => {
     try {
         // Validate Input
         const { error } = registerSchema.validate(req.body);
@@ -54,7 +54,7 @@ const handleRegisterUser = async (req, res) => {
     }
 };
 
-const handleLoginUser = async (req, res) => {
+const LoginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -95,12 +95,12 @@ const handleLoginUser = async (req, res) => {
     }
 };
 
-const handleLogoutUser = async (req, res) => {
+const LogoutUser = async (req, res) => {
     res.clearCookie("token");
     return res.status(200).json({ message: "Logout successful" });
 };
 
-const handleGetAllUsers = async (req, res) => {
+const GetAllUsers = async (req, res) => {
     try {
         const users = await User.find().select("-password"); // Exclude password field
 
@@ -113,7 +113,7 @@ const handleGetAllUsers = async (req, res) => {
     }
 }
 
-const handleForgotPassword = async (req, res) => {
+const ForgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
         if (!email) return res.status(400).json({ msg: "Please provide an email" });
@@ -163,7 +163,7 @@ const handleForgotPassword = async (req, res) => {
     }
 }
 
-const handleResetPassword = async (req, res) => {
+const ResetPassword = async (req, res) => {
     try {
         const { token } = req.params;
         const { password } = req.body
@@ -199,11 +199,11 @@ const getUserReceipts = async (req, res) => {
 };
 
 module.exports = {
-    handleRegisterUser,
-    handleLoginUser,
-    handleGetAllUsers,
-    handleForgotPassword,
-    handleResetPassword,
+    RegisterUser,
+    LoginUser,
+    GetAllUsers,
+    ForgotPassword,
+    ResetPassword,
     getUserReceipts,
-    handleLogoutUser,
+    LogoutUser,
 }

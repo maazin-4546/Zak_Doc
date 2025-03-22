@@ -4,8 +4,9 @@ import jsPDF from "jspdf";
 import 'jspdf-autotable';
 import * as XLSX from "xlsx"
 import amiriFontBase64 from "../../fonts/AmiriBase64";
+import "../App.css"
 
-const Table_DB = () => {
+const InvoiceTable = () => {
 
     const tableRef = useRef(null);
 
@@ -230,8 +231,8 @@ const Table_DB = () => {
 
     return (
         <div className='p-2 md:p-6'>
-            <div className="flex justify-end items-center p-2 md:p-0">
-                <div className="bg-white md:w-[79%] relative overflow-x-auto shadow-md py-4 p-2 md:p-6 mt-6 md:mt-8">
+            <div className="flex justify-center items-center p-2 md:p-0">
+                <div className="bg-white relative overflow-x-auto shadow-md py-4 p-2 md:p-6 mt-6 md:mt-8">
 
                     {/* Download Options */}
                     <div className='flex flex-col md:flex-row items-center justify-center md:justify-between py-4 md:py-0 mb-2'>
@@ -283,23 +284,16 @@ const Table_DB = () => {
                     </div>
 
                     {/* Table */}
-                    <div className="overflow-x-auto p-4">
+                    <div className="overflow-x-auto p-4 transition-all duration-300">
                         <div className="rounded-lg shadow-lg border border-gray-300">
-                            <table id="table_data" ref={tableRef} className="w-full text-sm text-left text-gray-800 bg-white overflow-x-auto">
+                            <table
+                                id="table_data"
+                                ref={tableRef}
+                                className="w-[calc(100vw-260px)] md:w-[calc(100vw-320px)] transition-all duration-300 text-sm text-left text-gray-800 bg-white overflow-x-auto"
+                            >
                                 <thead className="text-xs font-bold uppercase bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg">
                                     <tr>
-                                        {[
-                                            "Invoice",
-                                            "Date",
-                                            "Company Name",
-                                            "Vendor Name",
-                                            "Products",
-                                            "Category",
-                                            "Quantity",
-                                            "Unit Amount",
-                                            "Tax Amount",
-                                            "Total",
-                                        ].map((heading, index) => (
+                                        {["Invoice", "Date", "Company Name", "Vendor Name", "Products", "Category", "Quantity", "Unit Amount", "Tax Amount", "Total", "Actions"].map((heading, index) => (
                                             <th key={index} className="px-6 py-4 border border-gray-300 text-center">
                                                 {heading}
                                             </th>
@@ -348,11 +342,25 @@ const Table_DB = () => {
                                                 <td className="px-6 py-4 border border-gray-300 text-center text-indigo-700 font-medium">
                                                     {invoice.total || 0}
                                                 </td>
+                                                <td className="px-6 py-4 border border-gray-300 text-center">
+                                                    <button
+                                                        onClick={() => handleUpdate(invoice)}
+                                                        className="cursor-pointer text-blue-600 hover:text-blue-800 px-2 py-1"
+                                                    >
+                                                        Update
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(invoice.id)}
+                                                        className="cursor-pointer text-red-600 hover:text-red-800 px-2 py-1 ml-2"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="9" className="py-4 px-4 text-center text-gray-600 bg-gray-100 border border-gray-300">
+                                            <td colSpan="11" className="py-4 px-4 text-center text-gray-600 bg-gray-100 border border-gray-300">
                                                 No invoices found
                                             </td>
                                         </tr>
@@ -361,6 +369,7 @@ const Table_DB = () => {
                             </table>
                         </div>
                     </div>
+
 
                     {/* Pagination */}
                     <div className="flex flex-col md:flex-row justify-center md:justify-between items-center gap-2 md:gap-0 my-4">
@@ -455,4 +464,4 @@ const Table_DB = () => {
 };
 
 
-export default Table_DB;
+export default InvoiceTable;

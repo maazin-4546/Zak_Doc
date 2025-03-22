@@ -6,7 +6,7 @@ import { ToastContainer } from "react-toastify";
 import UpdateInvoiceModal from "./UpdateModal";
 import "../App.css";
 
-const InvoiceExtractor = () => {
+const FileUpload = () => {
 
     const [file, setFile] = useState(null);
     const [jsonData, setJsonData] = useState(null);
@@ -145,4 +145,4 @@ const InvoiceExtractor = () => {
     );
 };
 
-export default InvoiceExtractor;
+export default FileUpload;

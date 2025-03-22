@@ -1,22 +1,22 @@
 const express = require('express');
 const router = express.Router()
 const {
-    handleRegisterUser,
-    handleLoginUser,
-    handleGetAllUsers,
-    handleForgotPassword,
-    handleResetPassword,
+    RegisterUser,
+    LoginUser,
+    GetAllUsers,
+    ForgotPassword,
+    ResetPassword,
     getUserReceipts,
-    handleLogoutUser
+    LogoutUser
 } = require('../controllers/userController');
 
 
-router.post("/register", handleRegisterUser);
-router.post("/login", handleLoginUser);
-router.post("/logout", handleLogoutUser);
-router.get("/all-users", handleGetAllUsers);
-router.post("/forgot-password", handleForgotPassword);
-router.post("/reset-password/:token", handleResetPassword);
+router.post("/register", RegisterUser);
+router.post("/login", LoginUser);
+router.post("/logout", LogoutUser);
+router.get("/all-users", GetAllUsers);
+router.post("/forgot-password", ForgotPassword);
+router.post("/reset-password/:token", ResetPassword);
 
 // get user specific receipt
 router.post("/receipts", getUserReceipts);
