@@ -9,6 +9,7 @@ const {
     getCountOfSpecificCategory,
     getReceiptsByDateRange,
     getUserSpcificInvoice,
+    deleteInvoiceData
 } = require("../controllers/invoiceController");
 const authMiddleware = require("../middleware/authMiddleware")
 const multer = require("multer");
@@ -31,6 +32,9 @@ router.get("/api/invoices/category-count/:category", getCountOfSpecificCategory)
 
 // update the latest inserted data
 router.put("/api/invoices/:invoiceId", updateInvoiceData);
+
+// delete invoice
+router.delete("/api/delete-invoice/:invoiceId", deleteInvoiceData);
 
 // Get all invoices for a specific user
 router.get("/api/user-invoices", authMiddleware, getUserSpcificInvoice);

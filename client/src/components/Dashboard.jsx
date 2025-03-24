@@ -1,8 +1,11 @@
 import React from 'react'
+import NavbarSecond from './Navbar/NavbarSecond'
 
 const Dashboard = () => {
   return (
-    <div>Dashboard</div>
+    <div>
+      <NavbarSecond title={"Dashboard"} path={" / Dashboard"} />
+    </div>
   )
 }
 

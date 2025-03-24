@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa"
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
 
 const ResetPassword = () => {
 
     const navigate = useNavigate();
 
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const { token } = useParams(); // Extract token from URL
 
@@ -23,22 +24,22 @@ const ResetPassword = () => {
             });
 
             const data = await res.json();
-            setSuccess(data.msg);
+            toast.success("Password Reset Successfully")
 
             if (res.ok) {
                 setTimeout(() => navigate("/login"), 2000); // Redirect to login after success
             }
         } catch (error) {
-            setError("Something went wrong. Try again.");
+            toast.error("Something went wrong. Try again.");
         }
     };
 
     return (
-        <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900">
-            <div className="shadow-gray-800 max-w-md w-full bg-white/10 backdrop-blur-lg shadow-xl rounded-2xl p-8 border border-gray-700">
-                <h2 className="text-3xl font-extrabold text-center mb-6 text-white">Reset Password</h2>
-                {error && <p className="text-red-500 text-center font-medium my-4">{error}</p>}
-                {success && <p className="text-green-500 text-center font-medium my-4">{success}</p>}
+        <div className="flex justify-center items-center min-h-screen">
+            <ToastContainer />
+            <div className="max-w-md w-full bg-white backdrop-blur-lg shadow-xl rounded-lg p-8">
+                <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">Reset Password</h2>
+
                 <form onSubmit={handleResetPassword} className="space-y-5">
                     <div className="relative">
                         <input
@@ -46,20 +47,24 @@ const ResetPassword = () => {
                             placeholder="Enter new password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3 bg-gray-800 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-900 transition-all duration-300"
+                            className="w-full px-4 py-3 text-black bg-gray-100 shadow-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-300"
                             required
                         />
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="cursor-pointer absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-200 transition duration-200"
+                            className="cursor-pointer absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 transition duration-200"
                         >
                             {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
                         </button>
                     </div>
+
                     <button
-                        className="cursor-pointer w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 rounded-lg hover:from-blue-600 hover:to-blue-800 transition-all duration-300 font-semibold shadow-lg"
-                        type="submit">Reset Password</button>
+                        className="mt-4 bg-indigo-500 text-white cursor-pointer py-2 px-4 rounded-lg hover:bg-indigo-400 transition duration-200 w-full"
+                        type="submit"
+                    >
+                        Reset Password
+                    </button>
                 </form>
             </div>
         </div>

@@ -3,7 +3,7 @@ const Invoice = require("../models/Invoice");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer")
-const registerSchema = require("../helpers/registerValidations")
+const { registerSchema, changePasswordSchema } = require("../helpers/registerValidations")
 
 
 const RegisterUser = async (req, res) => {
@@ -100,18 +100,83 @@ const LogoutUser = async (req, res) => {
     return res.status(200).json({ message: "Logout successful" });
 };
 
-const GetAllUsers = async (req, res) => {
+const GetSingleUser = async (req, res) => {
     try {
-        const users = await User.find().select("-password"); // Exclude password field
+        const userId = req.params.id; // Get user ID from route parameters
+
+        const user = await User.findById(userId).select("-password"); // Exclude password field
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
 
         res.status(200).json({
-            message: "Users fetched successfully",
-            users,
+            message: "User fetched successfully",
+            user,
         });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }
-}
+};
+
+const updateUserInfo = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const { firstName, lastName, email, phone } = req.body;
+
+        // Update the user
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { firstName, lastName, email, phone },
+            { new: true, runValidators: true }
+        ).select("-password");
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({
+            message: "User updated successfully",
+            user: updatedUser,
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+const updateUserPassword = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const { currentPassword, newPassword, confirmNewPassword } = req.body;
+
+        const { error } = changePasswordSchema.validate({ currentPassword, newPassword, confirmNewPassword });
+        if (error) return res.status(400).json({ message: error.details[0].message });
+
+        // Check if current and new password are the same
+        if (currentPassword === newPassword) {
+            return res.status(400).json({ message: "New password must be different from current password" });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) return res.status(400).json({ message: "Current password is incorrect" });
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        user.password = hashedPassword;
+        await user.save();
+
+        res.status(200).json({ message: "Password updated successfully" });
+
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
 
 const ForgotPassword = async (req, res) => {
     try {
@@ -201,9 +266,11 @@ const getUserReceipts = async (req, res) => {
 module.exports = {
     RegisterUser,
     LoginUser,
-    GetAllUsers,
+    GetSingleUser,
     ForgotPassword,
     ResetPassword,
     getUserReceipts,
     LogoutUser,
+    updateUserInfo,
+    updateUserPassword
 }

@@ -1,8 +1,11 @@
 import axios from "axios";
 import { toast } from "react-toastify";
+import { GenerateContext } from "../Context/ContextAPI";
+import { useContext } from "react";
 
 const UpdateInvoiceModal = ({ jsonData, setJsonData, isOpen, onClose }) => {
 
+    // const { isOpen, setIsOpen } = useContext(GenerateContext)
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -43,158 +46,167 @@ const UpdateInvoiceModal = ({ jsonData, setJsonData, isOpen, onClose }) => {
         }
     };
 
+
+
     if (!isOpen) return null;
 
     return (
-        <div className="scale-up-center fixed inset-0 flex items-center justify-center z-50 bg-opacity-40 backdrop-blur-sm transition-opacity duration-300">
-            <div className="relative p-6 w-full max-w-[650px] bg-gradient-to-r from-gray-100 to-gray-200 rounded-xl shadow-2xl transition-transform transform">
-
-                {/* Modal Header (Fixed) */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-300 dark:border-gray-700">
-                    <h3 className="text-3xl font-bold text-cyan-700">Update Information</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm px-4">
+            <div className="w-full max-w-3xl bg-white rounded-xl shadow-xl overflow-hidden animate-slideFadeIn">
+                {/* Modal Header */}
+                <div className="flex justify-between items-center p-6 border-b border-gray-200">
+                    <h2 className="text-2xl font-bold text-gray-600">Update Invoice Details</h2>
                     <button
                         onClick={onClose}
-                        className="cursor-pointer text-gray-500 hover:text-gray-900 bg-gray-300 rounded-full p-2 transition-colors"
+                        className="text-gray-500 hover:text-gray-700 transition duration-200 cursor-pointer"
                     >
-                        <svg className="w-4 h-4" aria-hidden="true" fill="none" viewBox="0 0 14 14">
-                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
 
-                {/* Modal Body with Scrollable Content */}
-                <div className="p-4 max-h-[70vh] overflow-y-auto scroll-smooth">
+                {/* Modal Body */}
+                <div className="max-h-[75vh] overflow-y-auto px-6 py-4 space-y-6 scroll-smooth">
                     <form className="space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
+                        {/* Invoice and Date */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
-                                <label className="block mb-2 text-sm font-medium text-gray-900">Invoice Number</label>
+                                <label className="text-sm font-medium text-gray-600 mb-1 block">Invoice Number</label>
                                 <input
                                     type="text"
-                                    value={jsonData.invoice_number}
+                                    value={jsonData?.invoice_number || ""}
                                     onChange={(e) => setJsonData({ ...jsonData, invoice_number: e.target.value })}
-                                    className="w-full p-3 rounded-lg text-gray-900 bg-gray-100 focus:ring-blue-500 focus:border-blue-500 shadow-md"
+                                    className="w-full py-2 px-4 bg-gray-100 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                             </div>
                             <div>
-                                <label className="block mb-2 text-sm font-medium text-gray-900">Date</label>
+                                <label className="text-sm font-medium text-gray-600 mb-1 block">Date</label>
                                 <input
                                     type="text"
-                                    value={jsonData.date}
+                                    value={jsonData?.date || ""}
                                     onChange={(e) => setJsonData({ ...jsonData, date: e.target.value })}
-                                    className="w-full p-3 rounded-lg text-gray-900 bg-gray-100 focus:ring-blue-500 focus:border-blue-500 shadow-md"
+                                    className="w-full py-2 px-4 bg-gray-100 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-6">
+                        {/* Company and Vendor Name */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
-                                <label className="block mb-2 text-sm font-medium text-gray-900">Company Name</label>
+                                <label className="text-sm font-medium text-gray-600 mb-1 block">Company Name</label>
                                 <input
                                     type="text"
-                                    value={jsonData.company_name}
+                                    value={jsonData?.company_name || ""}
                                     onChange={(e) => setJsonData({ ...jsonData, company_name: e.target.value })}
-                                    className="w-full p-3 rounded-lg text-gray-900 bg-gray-100 focus:ring-blue-500 focus:border-blue-500 shadow-md"
+                                    className="w-full py-2 px-4 bg-gray-100 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                             </div>
                             <div>
-                                <label className="block mb-2 text-sm font-medium text-gray-900">Vendor Name</label>
+                                <label className="text-sm font-medium text-gray-600 mb-1 block">Vendor Name</label>
                                 <input
                                     type="text"
-                                    value={jsonData.vendor_name}
+                                    value={jsonData?.vendor_name || ""}
                                     onChange={(e) => setJsonData({ ...jsonData, vendor_name: e.target.value })}
-                                    className="w-full p-3 rounded-lg text-gray-900 bg-gray-100 focus:ring-blue-500 focus:border-blue-500 shadow-md"
+                                    className="w-full py-2 px-4 bg-gray-100 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                             </div>
                         </div>
 
+                        {/* Category */}
                         <div>
-                            <label className="block mb-2 text-sm font-medium text-gray-900">Category</label>
+                            <label className="text-sm font-medium text-gray-600 mb-1 block">Category</label>
                             <input
                                 type="text"
-                                value={jsonData.category}
+                                value={jsonData?.category || ""}
                                 onChange={(e) => setJsonData({ ...jsonData, category: e.target.value })}
-                                className="w-full p-3 rounded-lg text-gray-900 bg-gray-100 focus:ring-blue-500 focus:border-blue-500 shadow-md"
+                                className="w-full py-2 px-4 bg-gray-100 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>
 
-                        {jsonData.products.map((product, index) => (
-                            <div key={index} className="grid grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block mb-2 text-sm font-medium text-gray-900">Product Name</label>
-                                    <input
-                                        type="text"
-                                        value={product.product_name}
-                                        onChange={(e) => {
-                                            const updatedProducts = [...jsonData.products];
-                                            updatedProducts[index].product_name = e.target.value;
-                                            setJsonData({ ...jsonData, products: updatedProducts });
-                                        }}
-                                        className="w-full p-3 rounded-lg text-gray-900 bg-gray-100 focus:ring-blue-500 focus:border-blue-500 shadow-md"
-                                    />
+                        {/* Products Section */}
+                        <div className="space-y-4">
+                            {jsonData?.products?.map((product, index) => (
+                                <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-600 mb-1 block">Product Name</label>
+                                        <input
+                                            type="text"
+                                            value={product.product_name || ""}
+                                            onChange={(e) => {
+                                                const updatedProducts = [...jsonData.products];
+                                                updatedProducts[index].product_name = e.target.value;
+                                                setJsonData({ ...jsonData, products: updatedProducts });
+                                            }}
+                                            className="w-full py-2 px-4 bg-gray-100 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-600 mb-1 block">Quantity</label>
+                                        <input
+                                            type="text"
+                                            value={product.quantity || ""}
+                                            onChange={(e) => {
+                                                const updatedProducts = [...jsonData.products];
+                                                updatedProducts[index].quantity = e.target.value;
+                                                setJsonData({ ...jsonData, products: updatedProducts });
+                                            }}
+                                            className="w-full py-2 px-4 bg-gray-100 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-600 mb-1 block">Unit Amount</label>
+                                        <input
+                                            type="text"
+                                            value={product.unit_amount || ""}
+                                            onChange={(e) => {
+                                                const updatedProducts = [...jsonData.products];
+                                                updatedProducts[index].unit_amount = e.target.value;
+                                                setJsonData({ ...jsonData, products: updatedProducts });
+                                            }}
+                                            className="w-full py-2 px-4 bg-gray-100 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block mb-2 text-sm font-medium text-gray-900">Quantity</label>
-                                    <input
-                                        type="text"
-                                        value={product.quantity}
-                                        onChange={(e) => {
-                                            const updatedProducts = [...jsonData.products];
-                                            updatedProducts[index].quantity = e.target.value;
-                                            setJsonData({ ...jsonData, products: updatedProducts });
-                                        }}
-                                        className="w-full p-3 rounded-lg text-gray-900 bg-gray-100 focus:ring-blue-500 focus:border-blue-500 shadow-md"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block mb-2 text-sm font-medium text-gray-900">Unit Amount</label>
-                                    <input
-                                        type="text"
-                                        value={product.unit_amount}
-                                        onChange={(e) => {
-                                            const updatedProducts = [...jsonData.products];
-                                            updatedProducts[index].unit_amount = e.target.value;
-                                            setJsonData({ ...jsonData, products: updatedProducts });
-                                        }}
-                                        className="w-full p-3 rounded-lg text-gray-900 bg-gray-100 focus:ring-blue-500 focus:border-blue-500 shadow-md"
-                                    />
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
 
-                        <div className="grid grid-cols-2 gap-6">
+                        {/* Tax and Total */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
-                                <label className="block mb-2 text-sm font-medium text-gray-900">Tax Amount</label>
+                                <label className="text-sm font-medium text-gray-600 mb-1 block">Tax Amount</label>
                                 <input
                                     type="text"
-                                    value={jsonData.tax_amount}
+                                    value={jsonData?.tax_amount || ""}
                                     onChange={(e) => setJsonData({ ...jsonData, tax_amount: e.target.value })}
-                                    className="w-full p-3 rounded-lg text-gray-900 bg-gray-100 focus:ring-blue-500 focus:border-blue-500 shadow-md"
+                                    className="w-full py-2 px-4 bg-gray-100 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                             </div>
                             <div>
-                                <label className="block mb-2 text-sm font-medium text-gray-900">Total</label>
+                                <label className="text-sm font-medium text-gray-600 mb-1 block">Total</label>
                                 <input
                                     type="text"
-                                    value={jsonData.total}
+                                    value={jsonData?.total || ""}
                                     onChange={(e) => setJsonData({ ...jsonData, total: e.target.value })}
-                                    className="w-full p-3 rounded-lg text-gray-900 bg-gray-100 focus:ring-blue-500 focus:border-blue-500 shadow-md"
+                                    className="w-full py-2 px-4 bg-gray-100 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                             </div>
                         </div>
                     </form>
                 </div>
 
-                {/* Modal Footer (Fixed) */}
-                <div className="p-4 border-t border-gray-300">
+                {/* Modal Footer */}
+                <div className="p-6 border-t border-gray-200">
                     <button
                         onClick={handleSubmit}
-                        className="cursor-pointer w-full text-white bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-semibold rounded-lg text-lg px-5 py-3 shadow-lg transition-transform transform"
+                        className="w-full cursor-pointer bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 rounded-lg transition duration-300"
                     >
-                        Update
+                        Update Invoice
                     </button>
                 </div>
             </div>
         </div>
+
 
     );
 };

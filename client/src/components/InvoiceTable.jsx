@@ -1,12 +1,22 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useContext } from "react";
 import axios from "axios";
 import jsPDF from "jspdf";
 import 'jspdf-autotable';
 import * as XLSX from "xlsx"
 import amiriFontBase64 from "../../fonts/AmiriBase64";
 import "../App.css"
+import NavbarSecond from "./Navbar/NavbarSecond";
+import { Pencil, Trash2 } from "lucide-react";
+import DeleteConfirmationModal from "./DeleteConfirmationModal";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
+import UpdateInvoiceModal from "./UpdateModal";
+import { GenerateContext } from "../Context/ContextAPI";
 
 const InvoiceTable = () => {
+
+    const { isOpen, setIsOpen, jsonData, setJsonData } = useContext(GenerateContext)
 
     const tableRef = useRef(null);
 
@@ -14,6 +24,7 @@ const InvoiceTable = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [invoices, setInvoices] = useState([]);
     const [searchInput, setSearchInput] = useState("");
+    const [openModal, setOpenModal] = useState(false);
 
     //* backend Api Call 
     useEffect(() => {
@@ -229,237 +240,324 @@ const InvoiceTable = () => {
     };
 
 
+    const deleteInvoice = async (invoiceId) => {
+        try {
+            const response = await fetch(`http://localhost:5000/api/delete-invoice/${invoiceId}`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to delete invoice");
+            }
+
+            toast.success("Invoice Deleted Successfully")
+            return { success: true, message: data.message };
+        } catch (error) {
+            toast.error("Delete invoice error:", error.message);
+            return { success: false, error: error.message };
+        }
+    };
+
+
+
+
     return (
-        <div className='p-2 md:p-6'>
-            <div className="flex justify-center items-center p-2 md:p-0">
-                <div className="bg-white relative overflow-x-auto shadow-md py-4 p-2 md:p-6 mt-6 md:mt-8">
+        <>
+            <NavbarSecond title={"Invoice Data"} path={" / Invoice / Data"} />
+            <ToastContainer />
+            <div className='p-2 md:p-6'>
+                <div className="flex justify-center items-center p-2 md:p-0">
+                    <div className="bg-white relative overflow-x-auto shadow-md py-4 p-2 md:p-6 mt-6 md:mt-8">
 
-                    {/* Download Options */}
-                    <div className='flex flex-col md:flex-row items-center justify-center md:justify-between py-4 md:py-0 mb-2'>
-                        <h1 className="text-3xl text-cyan-700 mb-4">Invoice Data</h1>
-                        <div className='flex gap-2 items-center'>
-                            <h1 className='text-gray-500'>Export:</h1>
-                            <select
-                                onChange={handleExport}
-                                className="cursor-pointer rounded-md block w-24 p-1 py-2 border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            >
-                                <option value="">Select</option>
-                                <option value="PDF">PDF</option>
-                                <option value="Excel">Excel</option>
-                                <option value="Word">Word</option>
-                            </select>
+                        {/* Top Controls */}
+                        <div className="my-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6 px-2">
+
+                            {/* Search Bar */}
+                            <div className="flex items-center gap-2 w-full md:w-1/3">
+                                <label className="text-sm text-gray-600 font-medium">Search:</label>
+                                <input
+                                    type="search"
+                                    placeholder="By Vendor Name"
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                                />
+                            </div>
+
+                            {/* Export Dropdown */}
+                            <div className="flex items-center gap-2 w-full md:w-1/4">
+                                <label className="text-sm text-gray-600 font-medium whitespace-nowrap">Export:</label>
+                                <select
+                                    onChange={handleExport}
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                                >
+                                    <option value="">Select</option>
+                                    <option value="PDF">PDF</option>
+                                    <option value="Excel">Excel</option>
+                                    <option value="Word">Word</option>
+                                </select>
+                            </div>
+
+                            {/* Rows per Page */}
+                            <div className="flex items-center gap-2 w-full md:w-1/4">
+                                <label className="text-sm text-gray-600 font-medium whitespace-nowrap">Show</label>
+                                <select
+                                    value={rowsPerPage}
+                                    onChange={handleRowsPerPageChange}
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                                >
+                                    <option value={10}>10</option>
+                                    <option value={25}>25</option>
+                                    <option value={50}>50</option>
+                                    <option value={100}>100</option>
+                                </select>
+                                <span className="text-sm text-gray-600">entries</span>
+                            </div>
                         </div>
-                    </div>
 
-                    <hr />
-
-                    {/* Rows per page and Search box */}
-                    <div className='my-4 flex flex-col md:flex-row items-center justify-center md:justify-between gap-2 md:gap-0'>
-                        <div className="flex gap-2 items-center">
-                            <h1 className="text-gray-500">Show</h1>
-                            <select
-                                value={rowsPerPage}
-                                onChange={handleRowsPerPageChange}
-                                className="cursor-pointer rounded-md mt-1 p-1.5 block w-20 border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            >
-                                <option value={5}>5</option>
-                                <option value={10}>10</option>
-                                <option value={25}>25</option>
-                                <option value={50}>50</option>
-                                <option value={100}>100</option>
-                            </select>
-                            <h1 className="text-gray-500">entries</h1>
-                        </div>
-
-                        <div className="flex gap-2 items-center mb-4">
-                            <label className="font-bold block text-sm text-gray-500">Search:</label>
-                            <input
-                                type="search"
-                                placeholder="Search By Vendor Name"
-                                value={searchInput}
-                                onChange={(e) => setSearchInput(e.target.value)}
-                                className="mt-1 p-2 rounded-md block w-full border border-gray-300 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Table */}
-                    <div className="overflow-x-auto p-4 transition-all duration-300">
-                        <div className="rounded-lg shadow-lg border border-gray-300">
-                            <table
-                                id="table_data"
-                                ref={tableRef}
-                                className="w-[calc(100vw-260px)] md:w-[calc(100vw-320px)] transition-all duration-300 text-sm text-left text-gray-800 bg-white overflow-x-auto"
-                            >
-                                <thead className="text-xs font-bold uppercase bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg">
-                                    <tr>
-                                        {["Invoice", "Date", "Company Name", "Vendor Name", "Products", "Category", "Quantity", "Unit Amount", "Tax Amount", "Total", "Actions"].map((heading, index) => (
-                                            <th key={index} className="px-6 py-4 border border-gray-300 text-center">
-                                                {heading}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {displayedRows.length > 0 ? (
-                                        displayedRows.map((invoice, index) => (
-                                            <tr
-                                                key={index}
-                                                className="even:bg-gray-100 odd:bg-gray-50 hover:bg-blue-100 hover:scale-101 transition-all duration-300"
-                                            >
-                                                <td className="px-6 py-4 border border-gray-300 text-center">{invoice.invoice_number || "null"}</td>
-                                                <td className="px-6 py-4 border border-gray-300 text-center">
-                                                    {invoice.date ? new Date(invoice.date).toLocaleDateString("en-GB") : "null"}
-                                                </td>
-
-                                                <td className="px-6 py-4 border border-gray-300">{invoice.company_name || "null"}</td>
-                                                <td className="px-6 py-4 border border-gray-300">{invoice.vendor_name || "null"}</td>
-                                                <td className="px-6 py-4 border border-gray-300">
-                                                    {invoice.products?.length ? (
-                                                        <ul className="list-disc pl-4 text-sm text-gray-700">
-                                                            {invoice.products.map((product, idx) => (
-                                                                <li key={idx}>{product.product_name || "null"}</li>
-                                                            ))}
-                                                        </ul>
-                                                    ) : (
-                                                        "null"
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4 border border-gray-300">{invoice.category || "null"}</td>
-                                                <td className="px-6 py-4 border border-gray-300 text-center">
-                                                    {invoice.products?.length
-                                                        ? invoice.products.map((p, idx) => <div key={idx}>{p.quantity || 0}</div>)
-                                                        : "null"}
-                                                </td>
-                                                <td className="px-6 py-4 border border-gray-300 text-green-600 font-medium">
-                                                    {invoice.products?.length
-                                                        ? invoice.products.map((p, idx) => <div key={idx}>{p.unit_amount || 0}</div>)
-                                                        : "null"}
-                                                </td>
-                                                <td className="px-6 py-4 border border-gray-300 text-center text-yellow-600 font-medium">
-                                                    {invoice.tax_amount || 0}
-                                                </td>
-                                                <td className="px-6 py-4 border border-gray-300 text-center text-indigo-700 font-medium">
-                                                    {invoice.total || 0}
-                                                </td>
-                                                <td className="px-6 py-4 border border-gray-300 text-center">
-                                                    <button
-                                                        onClick={() => handleUpdate(invoice)}
-                                                        className="cursor-pointer text-blue-600 hover:text-blue-800 px-2 py-1"
+                        {/* Table */}
+                        <div className="p-4">
+                            <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden">
+                                <div className="overflow-x-auto max-w-full scrollbar-thin scrollbar-thumb-indigo-300 scrollbar-track-gray-100">
+                                    <table
+                                        id="table_data"
+                                        ref={tableRef}
+                                        className="min-w-full text-sm text-gray-800"
+                                    >
+                                        {/* Table Head */}
+                                        <thead className="shadow-sm text-black text-sm">
+                                            <tr>
+                                                {[
+                                                    "Invoice",
+                                                    "Date",
+                                                    "Company Name",
+                                                    "Vendor Name",
+                                                    "Products",
+                                                    "Category",
+                                                    "Quantity",
+                                                    "Unit Amount",
+                                                    "Tax Amount",
+                                                    "Total",
+                                                    "Actions",
+                                                ].map((heading, index) => (
+                                                    <th
+                                                        key={index}
+                                                        className="px-5 py-4 text-center font-medium tracking-wide border-b border-gray-200"
                                                     >
-                                                        Update
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(invoice.id)}
-                                                        className="cursor-pointer text-red-600 hover:text-red-800 px-2 py-1 ml-2"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </td>
+                                                        {heading}
+                                                    </th>
+                                                ))}
                                             </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan="11" className="py-4 px-4 text-center text-gray-600 bg-gray-100 border border-gray-300">
-                                                No invoices found
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                                        </thead>
 
-
-                    {/* Pagination */}
-                    <div className="flex flex-col md:flex-row justify-center md:justify-between items-center gap-2 md:gap-0 my-4">
-                        <p className="text-gray-500">
-                            Showing {startRow + 1} to {Math.min(startRow + rowsPerPage, invoices.length)} of {invoices.length} entries
-                        </p>
-                        <nav>
-                            <ul className="inline-flex text-sm border border-gray-300">
-                                <li>
-                                    <button
-                                        onClick={() => handlePageChange(currentPage - 1)}
-                                        disabled={currentPage === 1}
-                                        className={`px-3 h-8 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "text-gray-500 cursor-pointer"}`}
-                                    >
-                                        Previous
-                                    </button>
-                                </li>
-
-                                {totalPages > 7 ? (
-                                    <>
-                                        {/* First Page */}
-                                        <li>
-                                            <button
-                                                onClick={() => handlePageChange(1)}
-                                                className={`px-3 h-8 cursor-pointer ${currentPage === 1 ? "bg-cyan-700 text-white" : "text-gray-500"}`}
-                                            >
-                                                1
-                                            </button>
-                                        </li>
-
-                                        {/* Show Ellipsis if Current Page is Beyond Page 3 */}
-                                        {currentPage > 4 && <li className="px-2">...</li>}
-
-                                        {/* Show Around Current Page */}
-                                        {Array.from({ length: 5 }, (_, i) => currentPage - 2 + i)
-                                            .filter(page => page > 1 && page < totalPages) // Only valid pages
-                                            .map(page => (
-                                                <li key={page}>
-                                                    <button
-                                                        onClick={() => handlePageChange(page)}
-                                                        className={`px-3 h-8 cursor-pointer ${currentPage === page ? "bg-cyan-700 text-white" : "text-gray-500"}`}
+                                        {/* Table Body */}
+                                        <tbody>
+                                            {displayedRows.length > 0 ? (
+                                                displayedRows.map((invoice, index) => (
+                                                    <tr
+                                                        key={index}
+                                                        className="hover:bg-indigo-50 transition-colors duration-200 border-b border-gray-300"
                                                     >
-                                                        {page}
-                                                    </button>
-                                                </li>
-                                            ))}
+                                                        <td className="px-5 py-4 text-center">{invoice.invoice_number || "—"}</td>
+                                                        <td className="px-5 py-4 text-center">
+                                                            {invoice.date
+                                                                ? new Date(invoice.date).toLocaleDateString("en-GB")
+                                                                : "—"}
+                                                        </td>
+                                                        <td className="px-5 py-4">{invoice.company_name || "—"}</td>
+                                                        <td className="px-5 py-4">{invoice.vendor_name || "—"}</td>
+                                                        <td className="px-5 py-4">
+                                                            {invoice.products?.length ? (
+                                                                <ul className="list-disc pl-4 space-y-1 text-sm text-gray-700">
+                                                                    {invoice.products.map((product, idx) => (
+                                                                        <li key={idx}>{product.product_name || "—"}</li>
+                                                                    ))}
+                                                                </ul>
+                                                            ) : (
+                                                                "—"
+                                                            )}
+                                                        </td>
+                                                        <td className="px-5 py-4">{invoice.category || "—"}</td>
+                                                        <td className="px-5 py-4 text-center">
+                                                            {invoice.products?.length
+                                                                ? invoice.products.map((p, idx) => (
+                                                                    <div key={idx}>{p.quantity || 0}</div>
+                                                                ))
+                                                                : "—"}
+                                                        </td>
+                                                        <td className="px-5 py-4 text-indigo-600 font-semibold">
+                                                            {invoice.products?.length
+                                                                ? invoice.products.map((p, idx) => (
+                                                                    <div key={idx}>{p.unit_amount || 0}</div>
+                                                                ))
+                                                                : "—"}
+                                                        </td>
+                                                        <td className="px-5 py-4 text-center text-yellow-600 font-medium">
+                                                            {invoice.tax_amount || 0}
+                                                        </td>
+                                                        <td className="px-5 py-4 text-center text-indigo-700 font-bold">
+                                                            {invoice.total || 0}
+                                                        </td>
 
-                                        {/* Show Ellipsis if Not on Last Few Pages */}
-                                        {currentPage < totalPages - 3 && <li className="px-2">...</li>}
+                                                        {/* ACTION ICONS */}
+                                                        <td className="px-5 py-4">
+                                                            <div className="flex justify-center items-center gap-3">
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setJsonData(invoice);
+                                                                        setIsOpen(true);
+                                                                    }}
+                                                                    className="cursor-pointer p-2 rounded-full bg-indigo-100 hover:bg-indigo-200 text-indigo-600 hover:text-indigo-800 transition-transform hover:scale-110"
+                                                                    title="Update"
+                                                                >
+                                                                    <Pencil size={18} />
+                                                                </button>
 
-                                        {/* Last Page */}
-                                        <li>
-                                            <button
-                                                onClick={() => handlePageChange(totalPages)}
-                                                className={`px-3 h-8 cursor-pointer ${currentPage === totalPages ? "bg-cyan-700 text-white" : "text-gray-500"}`}
-                                            >
-                                                {totalPages}
-                                            </button>
-                                        </li>
-                                    </>
-                                ) : (
-                                    // If Total Pages is 7 or Less, Show All Pages
-                                    Array.from({ length: totalPages }).map((_, index) => (
-                                        <li key={index}>
-                                            <button
-                                                onClick={() => handlePageChange(index + 1)}
-                                                className={`px-3 h-8 cursor-pointer ${currentPage === index + 1 ? "bg-cyan-700 text-white" : "text-gray-500"}`}
-                                            >
-                                                {index + 1}
-                                            </button>
-                                        </li>
-                                    ))
-                                )}
+                                                                <button
+                                                                    onClick={() => setOpenModal(true)}
+                                                                    className="cursor-pointer p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-800 transition-transform hover:scale-110"
+                                                                    title="Delete"
+                                                                >
+                                                                    <Trash2 size={18} />
+                                                                </button>
 
-                                <li>
-                                    <button
-                                        onClick={() => handlePageChange(currentPage + 1)}
-                                        disabled={currentPage === totalPages}
-                                        className={`px-3 h-8 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "text-cyan-700 cursor-pointer"}`}
-                                    >
-                                        Next
-                                    </button>
-                                </li>
-                            </ul>
-                        </nav>
+                                                                {/* Confirmation Modal */}
+                                                                <DeleteConfirmationModal
+                                                                    openModal={openModal}
+                                                                    setOpenModal={setOpenModal}
+                                                                    invoice={invoice}
+                                                                    deleteInvoice={deleteInvoice}
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td
+                                                        colSpan="11"
+                                                        className="px-6 py-6 text-center text-gray-500 bg-gray-50 border-t border-gray-200"
+                                                    >
+                                                        No invoices found
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <UpdateInvoiceModal
+                            jsonData={jsonData}
+                            setJsonData={setJsonData}
+                            isOpen={isOpen}
+                            onClose={() => setIsOpen(false)}
+                        />
+
+                        {/* Pagination Section */}
+                        <div className="flex flex-col md:flex-row justify-between items-center gap-4 px-2 my-6">
+
+                            {/* Pagination Info */}
+                            <p className="text-sm text-gray-500">
+                                Showing {startRow + 1} to {Math.min(startRow + rowsPerPage, invoices.length)} of {invoices.length} entries
+                            </p>
+
+                            {/* Pagination Buttons */}
+                            <nav>
+                                <ul className="inline-flex flex-wrap items-center border border-gray-300 rounded-md overflow-hidden text-sm">
+                                    <li>
+                                        <button
+                                            onClick={() => handlePageChange(currentPage - 1)}
+                                            disabled={currentPage === 1}
+                                            className={`px-3 py-1.5 ${currentPage === 1
+                                                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                                : "text-gray-600 hover:bg-gray-100"
+                                                }`}
+                                        >
+                                            Previous
+                                        </button>
+                                    </li>
+
+                                    {totalPages > 7 ? (
+                                        <>
+                                            <li>
+                                                <button
+                                                    onClick={() => handlePageChange(1)}
+                                                    className={`px-3 py-1.5 ${currentPage === 1 ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-100"
+                                                        }`}
+                                                >
+                                                    1
+                                                </button>
+                                            </li>
+
+                                            {currentPage > 4 && <li className="px-2 text-gray-500">...</li>}
+
+                                            {Array.from({ length: 5 }, (_, i) => currentPage - 2 + i)
+                                                .filter(page => page > 1 && page < totalPages)
+                                                .map(page => (
+                                                    <li key={page}>
+                                                        <button
+                                                            onClick={() => handlePageChange(page)}
+                                                            className={`px-3 py-1.5 ${currentPage === page ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-100"
+                                                                }`}
+                                                        >
+                                                            {page}
+                                                        </button>
+                                                    </li>
+                                                ))}
+
+                                            {currentPage < totalPages - 3 && <li className="px-2 text-gray-500">...</li>}
+
+                                            <li>
+                                                <button
+                                                    onClick={() => handlePageChange(totalPages)}
+                                                    className={`px-3 py-1.5 ${currentPage === totalPages ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-100"
+                                                        }`}
+                                                >
+                                                    {totalPages}
+                                                </button>
+                                            </li>
+                                        </>
+                                    ) : (
+                                        Array.from({ length: totalPages }).map((_, index) => (
+                                            <li key={index}>
+                                                <button
+                                                    onClick={() => handlePageChange(index + 1)}
+                                                    className={`px-3 py-1.5 ${currentPage === index + 1 ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-100"
+                                                        }`}
+                                                >
+                                                    {index + 1}
+                                                </button>
+                                            </li>
+                                        ))
+                                    )}
+
+                                    <li>
+                                        <button
+                                            onClick={() => handlePageChange(currentPage + 1)}
+                                            disabled={currentPage === totalPages}
+                                            className={`px-3 py-1.5 ${currentPage === totalPages
+                                                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                                : "text-gray-600 hover:bg-gray-100"
+                                                }`}
+                                        >
+                                            Next
+                                        </button>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+
                     </div>
-
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 

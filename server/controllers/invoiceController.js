@@ -150,6 +150,26 @@ const updateInvoiceData = async (req, res) => {
     }
 };
 
+const deleteInvoiceData = async (req, res) => {
+    try {
+        const { invoiceId } = req.params;
+
+        if (!invoiceId) return res.status(400).json({ error: "Invoice ID is required" });
+
+        const invoice = await Invoice.findById(invoiceId);
+        if (!invoice) return res.status(404).json({ error: "Invoice not found" });
+
+        await Invoice.findByIdAndDelete(invoiceId);
+
+        res.json({ success: true, message: "Invoice deleted successfully" });
+
+    } catch (error) {
+        console.error("Error deleting invoice:", error.message);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+
 module.exports = {
     extractInvoice,
     getAllInvoiceData,
@@ -158,5 +178,6 @@ module.exports = {
     getInvoiceDataById,
     getCountOfSpecificCategory,
     getReceiptsByDateRange,
-    getUserSpcificInvoice
+    getUserSpcificInvoice,
+    deleteInvoiceData
 };

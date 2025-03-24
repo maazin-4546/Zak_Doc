@@ -11,48 +11,39 @@
     -webkit-transform: scale(0.5);
     transform: scale(0.5);
   }
+
   100% {
     -webkit-transform: scale(1);
     transform: scale(1);
   }
 }
+
 @keyframes scale-up-center {
   0% {
     -webkit-transform: scale(0.5);
     transform: scale(0.5);
   }
+
   100% {
     -webkit-transform: scale(1);
     transform: scale(1);
   }
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 3px; /* Reduce scrollbar width */
+
+/* Modal animation */
+@keyframes slideFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.98);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-::-webkit-scrollbar-track {
-  background: #f0f0f0; /* Light background */
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #9ca3af; /* Gray color */
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #6b7280; /* Darker gray on hover */
-}
-
-/* When sidebar is expanded */
-.table-container {
-  width: calc(100vw - 260px); /* Adjust according to your sidebar width */
-  transition: all 0.3s ease-in-out;
-}
-
-/* When sidebar is collapsed */
-.sidebar-collapsed + .table-container {
-  width: calc(100vw - 80px); /* Adjust table width dynamically */
+.animate-slideFadeIn {
+  animation: slideFadeIn 0.3s ease-out forwards;
 }
