@@ -3,7 +3,8 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
-import UpdateInvoiceModal from "./UpdateModal";
+import UpdateInvoiceModal from "./Modals/UpdateModal";
+import { CloudUpload, Loader2, FileText } from "lucide-react";
 import "../App.css";
 import NavbarSecond from "./Navbar/NavbarSecond";
 
@@ -72,72 +73,41 @@ const FileUpload = () => {
 
     return (
         <>
-            <NavbarSecond title={"Invoice Upload"} path={" / Invoice / Upload" } />            
-            <div className="flex flex-col items-center justify-center pt-28">
+            <NavbarSecond title={"Invoice Upload"} path={" / Invoice / Upload"} />
+            <div className="flex items-center justify-center min-h-screen px-6 py-16">
                 <ToastContainer />
-                <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-lg text-center border border-gray-200">
-                    <h2 className="text-3xl font-extrabold text-cyan-700 mb-6 tracking-wide">Invoice Data Extraction</h2>
+                <div className="bg-white shadow-xl rounded-xl p-10 w-full max-w-xl border border-gray-200 space-y-6 flex flex-col items-center text-center">
+                    <h2 className="text-3xl font-bold text-indigo-500 flex items-center gap-2">
+                        <FileText size={28} /> Invoice Extractor
+                    </h2>
 
-                    {/* File Input */}
-                    <label className="block w-full cursor-pointer">
-                        <input
-                            type="file"
-                            accept="image/*,application/pdf"
-                            onChange={handleFileChange}
-                            className="hidden"
-                        />
-                        <div className="w-full h-16 px-5 py-3 border border-gray-300 rounded-xl bg-white text-gray-700 shadow-lg hover:border-blue-500 focus:ring-2 focus:ring-blue-400 focus:outline-none flex items-center justify-center text-lg font-medium transition-all duration-300">
-                            📂 Upload Invoice (Image/PDF)
-                        </div>
+                    <label className="relative w-full border-2 border-dashed border-indigo-400 rounded-lg p-6 text-center flex flex-col items-center cursor-pointer hover:bg-indigo-50 transition">
+                        <CloudUpload size={40} className="text-indigo-600 mb-2" />
+                        <span className="text-indigo-600 font-medium">Click to Upload Invoice</span>
+                        <input type="file" accept="image/*,application/pdf" onChange={handleFileChange} className="hidden" />
                     </label>
 
-                    {/* File Details */}
                     {selectedFile && (
-                        <div className="mt-6 p-5 bg-gray-100 rounded-xl w-full border border-gray-300 shadow-sm">
-                            <p className="text-gray-700 font-medium">
-                                File Name: <span className="font-semibold text-blue-600">{selectedFile.name}</span>
-                            </p>
-                            <p className="text-gray-700 font-medium">
-                                Size: <span className="font-semibold text-blue-600">{(selectedFile.size / 1024).toFixed(2)} KB</span>
-                            </p>
-
-                            {/* Image Preview */}
-                            {preview && (
-                                <div className="mt-4">
-                                    <img src={preview} alt="Preview" className="w-48 h-48 object-cover rounded-xl border border-gray-300 shadow-md mx-auto" />
-                                </div>
-                            )}
+                        <div className="w-full p-4 bg-gray-50 rounded-lg border border-gray-300 text-center shadow-md flex flex-col items-center">
+                            <p className="text-gray-700 font-medium">File: <span className="text-indigo-600 font-semibold">{selectedFile.name}</span></p>
+                            <p className="text-gray-700 font-medium">Size: <span className="text-indigo-600 font-semibold">{(selectedFile.size / 1024).toFixed(2)} KB</span></p>
+                            {preview && <img src={preview} alt="Preview" className="mt-4 w-36 h-36 object-cover rounded-lg border border-gray-300" />}
                         </div>
                     )}
 
-                    {/* Extract Button */}
                     <button
                         onClick={handleUpload}
-                        className={`w-full mt-6 py-3 px-6 text-lg font-semibold cursor-pointer text-white rounded-xl transition-all duration-300 
-            ${loading ? 'bg-cyan-600 cursor-not-allowed' : 'bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-700 hover:to-cyan-600 shadow-lg hover:shadow-xl'}`}
+                        className={`w-full py-3 px-6 cursor-pointer flex items-center justify-center gap-2 text-lg font-bold text-white rounded-lg transition-all duration-300 shadow-lg 
+                        ${loading ? "bg-indigo-600 cursor-not-allowed" : "bg-indigo-500 hover:bg-indigo-400"}`}
                         disabled={loading}
                     >
-                        {loading ? '🔄 Extracting...' : '🚀 Extract Data'}
+                        {loading ? <Loader2 className="animate-spin" size={20} /> : "Extract Data"}
                     </button>
 
-                    {/* Error Message */}
-                    {error && <p className="mt-4 text-red-500 text-lg font-medium">{error}</p>}
-
-                    {/* Extracted JSON Data */}
-                    {/* {jsonData && (
-                    <pre className="mt-6 bg-gray-100 text-gray-700 p-5 rounded-xl text-left w-full max-h-96 overflow-auto border border-gray-300 shadow-md">
-                        {JSON.stringify(jsonData, null, 2)}
-                    </pre>
-                )} */}
+                    {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
                 </div>
 
-                {/* Modal */}
-                <UpdateInvoiceModal
-                    isOpen={isOpen}
-                    onClose={() => setIsOpen(false)}
-                    jsonData={jsonData}
-                    setJsonData={setJsonData}
-                />
+                <UpdateInvoiceModal isOpen={isOpen} onClose={() => setIsOpen(false)} jsonData={jsonData} setJsonData={setJsonData} />
             </div>
         </>
     );

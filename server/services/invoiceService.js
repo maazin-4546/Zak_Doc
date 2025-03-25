@@ -20,60 +20,73 @@ const MODEL_CONFIG = {
 //* Main function to Process File (PDF or Image)
 const processFile = async (req) => {
   if (!req.file) {
-      return { error: "No file uploaded" };
+    return { error: "No file uploaded" };
   }
-
-  console.log("Uploaded File Path:", req.file.path);
-  console.log("User ID:", req.user?.id); // Debugging
 
   const filePath = path.resolve(req.file.path);
   let extractedData;
 
   try {
-      const userId = req.user.id; // Get user ID from req.user
+    const userId = req.user.id; // Get user ID from req.user
 
-      if (!userId) {
-          throw new Error("Unauthorized: User ID missing.");
-      }
+    if (!userId) {
+      throw new Error("Unauthorized: User ID missing.");
+    }
 
-      if (req.file.mimetype === "application/pdf") {
-          console.log("Processing PDF file...");
-          const extractedText = await extractTextFromPDF(filePath);
-          extractedData = await extractInvoiceFromText(extractedText);
-      } else if (req.file.mimetype.startsWith("image/")) {
-          console.log("Processing Image file...");
-          extractedData = await extractInvoiceFromImage(filePath);
-      } else {
-          throw new Error("Unsupported file format. Upload a PDF or an image.");
-      }
+    if (req.file.mimetype === "application/pdf") {
+      console.log("Processing PDF file...");
+      const extractedText = await extractTextFromPDF(filePath);
+      extractedData = await extractInvoiceFromText(extractedText);
+    } else if (req.file.mimetype.startsWith("image/")) {
+      console.log("Processing Image file...");
+      extractedData = await extractInvoiceFromImage(filePath);
+    } else {
+      throw new Error("Unsupported file format. Upload a PDF or an image.");
+    }
 
-      // Delete uploaded file after processing
-      fs.unlinkSync(filePath);
+    // Delete uploaded file after processing
+    fs.unlinkSync(filePath);
 
-      if (extractedData.error) {
-          return extractedData;
-      }
+    if (extractedData.error) {
+      return extractedData;
+    }
 
-      // Save extracted data to database with userId
-      const invoice = new Invoice({
-          userId, // Attach userId to invoice
-          invoice_number: extractedData.invoice_number,
-          date: extractedData.date,
-          company_name: extractedData.company_name,
-          vendor_name: extractedData.vendor_name || null,
-          tax_amount: extractedData.tax_amount || 0,
-          total: extractedData.total,
-          products: extractedData.products,
-          category: extractedData.category,
-          isProcess: true,
+    // Save extracted data to database with userId
+    const invoice = new Invoice({
+      userId, // Attach userId to invoice
+      invoice_number: extractedData.invoice_number,
+      date: extractedData.date,
+      company_name: extractedData.company_name,
+      vendor_name: extractedData.vendor_name || null,
+      tax_amount: extractedData.tax_amount || 0,
+      total: extractedData.total,
+      products: extractedData.products,
+      category: extractedData.category,
+      isProcess: true,
+    });
+
+    await invoice.save();
+
+    // Update or Insert Category with userId
+    const existingCategory = await Category.findOne({ userId, category: extractedData.category });
+
+    if (existingCategory) {
+      existingCategory.count += 1;
+      await existingCategory.save();
+    } else {
+      const newCategory = new Category({
+        userId,  // Store userId to differentiate users' categories
+        category: extractedData.category,
+        count: 1,
       });
+      await newCategory.save();
+    }
 
-      await invoice.save();
+    return invoice;
 
-      return invoice;
   } catch (error) {
-      console.error("Error processing file:", error.message);
-      return { error: error.message };
+    console.error("Error processing file:", error.message);
+    return { error: error.message };
   }
 };
 

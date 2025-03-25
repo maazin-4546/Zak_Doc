@@ -7,12 +7,14 @@ import amiriFontBase64 from "../../fonts/AmiriBase64";
 import "../App.css"
 import NavbarSecond from "./Navbar/NavbarSecond";
 import { Pencil, Trash2 } from "lucide-react";
-import DeleteConfirmationModal from "./DeleteConfirmationModal";
+import DeleteConfirmationModal from "./Modals/DeleteConfirmationModal";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
-import UpdateInvoiceModal from "./UpdateModal";
+import UpdateInvoiceModal from "./Modals/UpdateModal";
 import { GenerateContext } from "../Context/ContextAPI";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const InvoiceTable = () => {
 
@@ -26,32 +28,54 @@ const InvoiceTable = () => {
     const [searchInput, setSearchInput] = useState("");
     const [openModal, setOpenModal] = useState(false);
 
+    // top controls
+    const [startDate, setStartDate] = useState(null);
+    const [endDate, setEndDate] = useState(null);
+    const [selectedCategory, setSelectedCategory] = useState("All");
+
+
     //* backend Api Call 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                // Get token from localStorage
-                const token = localStorage.getItem("token");
-
-                if (!token) {
-                    console.error("No token found in localStorage");
-                    return;
-                }
-
-                const response = await axios.get("http://localhost:5000/api/user-invoices", {
-                    headers: {
-                        Authorization: `Bearer ${token}`, // Send token in headers
-                    },
-                });
-
-                setInvoices(response.data.data); // Make sure you're setting the correct data
-            } catch (error) {
-                console.error("Error fetching invoice data:", error.response?.data || error.message);
-            }
-        };
-
         fetchData();
     }, []);
+
+    const fetchData = async (category = 'All') => {
+        try {
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                console.error("No token found in localStorage");
+                return;
+            }
+
+            const config = {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            };
+
+            // Use the correct endpoint structure based on your routes
+            let url = "http://localhost:5000/api/user-invoices";
+            if (category !== 'All') {
+                url = `http://localhost:5000/api/user-invoices/category/${encodeURIComponent(category)}`;
+            }
+
+            const response = await axios.get(url, config);
+
+            setInvoices(response.data.data || response.data);
+        } catch (error) {
+            console.error("Error fetching invoice data:", error.response?.data || error.message);
+            setInvoices([]);
+        }
+    };
+
+    const handleCategoryChange = (e) => {
+        const category = e.target.value;
+        setSelectedCategory(category);
+        fetchData(category);
+    };
+
+
 
     //* seach query
     const filteredRows = invoices.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
@@ -62,6 +86,22 @@ const InvoiceTable = () => {
     });
 
     const displayedRows = searchedRows.slice(0, rowsPerPage);
+
+    //* Pagination calculations
+    const totalPages = Math.ceil(invoices.length / rowsPerPage);
+    const startRow = (currentPage - 1) * rowsPerPage;
+
+    const handlePageChange = (pageNumber) => {
+        if (pageNumber > 0 && pageNumber <= totalPages) {
+            setCurrentPage(pageNumber);
+        }
+    }
+
+    //* Handle rowsPerPage selection change
+    const handleRowsPerPageChange = (e) => {
+        setRowsPerPage(parseInt(e.target.value));
+        setCurrentPage(1);
+    };
 
     //* Handle export logic
     const handleExport = (e) => {
@@ -223,29 +263,20 @@ const InvoiceTable = () => {
         link.click();
     };
 
-    //* Pagination calculations
-    const totalPages = Math.ceil(invoices.length / rowsPerPage);
-    const startRow = (currentPage - 1) * rowsPerPage;
-
-    const handlePageChange = (pageNumber) => {
-        if (pageNumber > 0 && pageNumber <= totalPages) {
-            setCurrentPage(pageNumber);
-        }
-    }
-
-    //* Handle rowsPerPage selection change
-    const handleRowsPerPageChange = (e) => {
-        setRowsPerPage(parseInt(e.target.value));
-        setCurrentPage(1);
-    };
-
-
     const deleteInvoice = async (invoiceId) => {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            toast.error("User not authenticated");
+            return { success: false, error: "Unauthorized: No token provided" };
+        }
+
         try {
             const response = await fetch(`http://localhost:5000/api/delete-invoice/${invoiceId}`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
                 },
             });
 
@@ -255,16 +286,13 @@ const InvoiceTable = () => {
                 throw new Error(data.error || "Failed to delete invoice");
             }
 
-            toast.success("Invoice Deleted Successfully")
+            toast.success("Invoice Deleted Successfully");
             return { success: true, message: data.message };
         } catch (error) {
-            toast.error("Delete invoice error:", error.message);
+            toast.error(`Delete invoice error: ${error.message}`);
             return { success: false, error: error.message };
         }
     };
-
-
-
 
     return (
         <>
@@ -275,10 +303,9 @@ const InvoiceTable = () => {
                     <div className="bg-white relative overflow-x-auto shadow-md py-4 p-2 md:p-6 mt-6 md:mt-8">
 
                         {/* Top Controls */}
-                        <div className="my-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6 px-2">
-
+                        <div className="my-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-2 px-2">
                             {/* Search Bar */}
-                            <div className="flex items-center gap-2 w-full md:w-1/3">
+                            <div className="flex items-center gap-2">
                                 <label className="text-sm text-gray-600 font-medium">Search:</label>
                                 <input
                                     type="search"
@@ -289,34 +316,61 @@ const InvoiceTable = () => {
                                 />
                             </div>
 
-                            {/* Export Dropdown */}
+                            {/* Filter Dropdown */}
                             <div className="flex items-center gap-2 w-full md:w-1/4">
-                                <label className="text-sm text-gray-600 font-medium whitespace-nowrap">Export:</label>
+                                <label className="text-sm text-gray-600 font-medium whitespace-nowrap">Filter By:</label>
                                 <select
-                                    onChange={handleExport}
                                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                                    value={selectedCategory}
+                                    onChange={handleCategoryChange}
                                 >
+                                    <option value="All">All</option>
+                                    <option value="Office & Business Expenses">Office & Business Expenses</option>
+                                    <option value="Travel & Transportation">Travel & Transportation</option>
+                                    <option value="Food & Beverages">Food & Beverages</option>
+                                    <option value="Shopping & Retail">Shopping & Retail</option>
+                                    <option value="Medical & Healthcare">Medical & Healthcare</option>
+                                    <option value="Housing & Rent">Housing & Rent</option>
+                                </select>
+
+
+                            </div>
+
+                            {/* Date Range Picker */}
+                            <div className="flex items-center gap-2 w-full md:w-1/3">
+                                <label className="text-sm text-gray-600 font-medium whitespace-nowrap">Date Range:</label>
+                                <div className="flex w-full space-x-2">
+                                    <DatePicker
+                                        selected={startDate}
+                                        onChange={(date) => setStartDate(date)}
+                                        selectsStart
+                                        startDate={startDate}
+                                        endDate={endDate}
+                                        placeholderText="Start Date"
+                                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                                    />
+                                    <DatePicker
+                                        selected={endDate}
+                                        onChange={(date) => setEndDate(date)}
+                                        selectsEnd
+                                        startDate={startDate}
+                                        endDate={endDate}
+                                        minDate={startDate}
+                                        placeholderText="End Date"
+                                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Export Dropdown */}
+                            <div className="flex items-center gap-2 w-full md:w-1/6">
+                                <label className="text-sm text-gray-600 font-medium whitespace-nowrap">Export:</label>
+                                <select onChange={handleExport} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer">
                                     <option value="">Select</option>
                                     <option value="PDF">PDF</option>
                                     <option value="Excel">Excel</option>
                                     <option value="Word">Word</option>
                                 </select>
-                            </div>
-
-                            {/* Rows per Page */}
-                            <div className="flex items-center gap-2 w-full md:w-1/4">
-                                <label className="text-sm text-gray-600 font-medium whitespace-nowrap">Show</label>
-                                <select
-                                    value={rowsPerPage}
-                                    onChange={handleRowsPerPageChange}
-                                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-                                >
-                                    <option value={10}>10</option>
-                                    <option value={25}>25</option>
-                                    <option value={50}>50</option>
-                                    <option value={100}>100</option>
-                                </select>
-                                <span className="text-sm text-gray-600">entries</span>
                             </div>
                         </div>
 
@@ -334,7 +388,8 @@ const InvoiceTable = () => {
                                             <tr>
                                                 {[
                                                     "Invoice",
-                                                    "Date",
+                                                    "Invoice Date",
+                                                    "Upload Date",
                                                     "Company Name",
                                                     "Vendor Name",
                                                     "Products",
@@ -367,6 +422,11 @@ const InvoiceTable = () => {
                                                         <td className="px-5 py-4 text-center">
                                                             {invoice.date
                                                                 ? new Date(invoice.date).toLocaleDateString("en-GB")
+                                                                : "—"}
+                                                        </td>
+                                                        <td className="px-5 py-4 text-center">
+                                                            {invoice.createdAt
+                                                                ? new Date(invoice.createdAt).toLocaleDateString("en-GB") // Formats to DD/MM/YYYY
                                                                 : "—"}
                                                         </td>
                                                         <td className="px-5 py-4">{invoice.company_name || "—"}</td>
@@ -460,11 +520,28 @@ const InvoiceTable = () => {
                             onClose={() => setIsOpen(false)}
                         />
 
-                        {/* Pagination Section */}
+                        {/* Bottom Section */}
                         <div className="flex flex-col md:flex-row justify-between items-center gap-4 px-2 my-6">
 
+                            {/* Rows per Page */}
+                            <div className="flex items-center gap-2 w-full md:w-1/6">
+                                <label className="text-sm text-gray-600 font-medium whitespace-nowrap">Show</label>
+                                <select
+                                    value={rowsPerPage}
+                                    onChange={handleRowsPerPageChange}
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                                >
+                                    <option value={5}>5</option>
+                                    <option value={10}>10</option>
+                                    <option value={25}>25</option>
+                                    <option value={50}>50</option>
+                                    <option value={100}>100</option>
+                                </select>
+                                <span className="text-sm text-gray-600">entries</span>
+                            </div>
+
                             {/* Pagination Info */}
-                            <p className="text-sm text-gray-500">
+                            <p className="text-md text-gray-500">
                                 Showing {startRow + 1} to {Math.min(startRow + rowsPerPage, invoices.length)} of {invoices.length} entries
                             </p>
 

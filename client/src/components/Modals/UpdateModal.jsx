@@ -1,11 +1,9 @@
 import axios from "axios";
 import { toast } from "react-toastify";
-import { GenerateContext } from "../Context/ContextAPI";
+import { GenerateContext } from "../../Context/ContextAPI";
 import { useContext } from "react";
 
 const UpdateInvoiceModal = ({ jsonData, setJsonData, isOpen, onClose }) => {
-
-    // const { isOpen, setIsOpen } = useContext(GenerateContext)
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -45,8 +43,6 @@ const UpdateInvoiceModal = ({ jsonData, setJsonData, isOpen, onClose }) => {
             toast.error("Failed to update invoice");
         }
     };
-
-
 
     if (!isOpen) return null;
 

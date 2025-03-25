@@ -46,14 +46,22 @@ const getUserSpcificInvoice = async (req, res) => {
 const getInvoiceDataFromCategory = async (req, res) => {
     try {
         const { category } = req.params;
+        const userId = req.user._id; // Extracted from authMiddleware
 
-        // Validate category from existing records
-        const existingCategories = await Invoice.distinct("category");
-        if (!existingCategories.includes(category)) {
+        const decodedCategory = decodeURIComponent(category);
+
+        // Check if category exists (optional)
+        const existingCategories = await Invoice.distinct("category", { user: userId });
+        if (!existingCategories.includes(decodedCategory)) {
             return res.status(400).json({ error: "Invalid category" });
         }
 
-        const invoices = await Invoice.find({ category });
+        // Fetch invoices for this user + category
+        const invoices = await Invoice.find({
+            category: decodedCategory,
+            user: userId // Ensure only user-specific invoices
+        });
+
         res.json(invoices);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -123,7 +131,7 @@ const getReceiptsByDateRange = async (req, res) => {
 
 const updateInvoiceData = async (req, res) => {
     try {
-        const { products, ...updatedFields } = req.body;
+        const { products, category, ...updatedFields } = req.body;
         const { invoiceId } = req.params;
 
         if (!invoiceId) return res.status(400).json({ error: "Invoice ID is required" });
@@ -131,6 +139,7 @@ const updateInvoiceData = async (req, res) => {
         const invoice = await Invoice.findById(invoiceId);
         if (!invoice) return res.status(404).json({ error: "Invoice not found" });
 
+        const oldCategory = invoice.category; // Store old category before update
         Object.assign(invoice, updatedFields);
 
         if (Array.isArray(products)) {
@@ -139,6 +148,26 @@ const updateInvoiceData = async (req, res) => {
                 if (product) Object.assign(product, productUpdates);
             });
             invoice.markModified("products");
+        }
+
+        if (category && category !== oldCategory) {
+            // ✅ Decrease count of old category
+            await Category.findOneAndUpdate(
+                { userId: invoice.userId, category: oldCategory },
+                { $inc: { count: -1 } }
+            );
+
+            // ✅ Increase count of new category (or create if it doesn't exist)
+            const existingCategory = await Category.findOne({ userId: invoice.userId, category });
+            if (existingCategory) {
+                existingCategory.count += 1;
+                await existingCategory.save();
+            } else {
+                const newCategory = new Category({ userId: invoice.userId, category, count: 1 });
+                await newCategory.save();
+            }
+
+            invoice.category = category;
         }
 
         await invoice.save();
@@ -153,13 +182,29 @@ const updateInvoiceData = async (req, res) => {
 const deleteInvoiceData = async (req, res) => {
     try {
         const { invoiceId } = req.params;
+        const userId = req.user.id; // Get the logged-in user's ID
 
         if (!invoiceId) return res.status(400).json({ error: "Invoice ID is required" });
 
         const invoice = await Invoice.findById(invoiceId);
         if (!invoice) return res.status(404).json({ error: "Invoice not found" });
 
+        const categoryName = invoice.category;
+
+        // Delete the invoice
         await Invoice.findByIdAndDelete(invoiceId);
+
+        // Update the category count for the user
+        const category = await Category.findOne({ userId, category: categoryName });
+
+        if (category) {
+            category.count -= 1;
+            if (category.count <= 0) {
+                await Category.findByIdAndDelete(category._id); // Remove category if count reaches 0
+            } else {
+                await category.save();
+            }
+        }
 
         res.json({ success: true, message: "Invoice deleted successfully" });
 
@@ -168,7 +213,6 @@ const deleteInvoiceData = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
-
 
 module.exports = {
     extractInvoice,

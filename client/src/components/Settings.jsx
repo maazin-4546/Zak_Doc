@@ -10,30 +10,30 @@ const settingsOptions = [
         description: "Update your personal information and profile picture.",
         path: '/user-profile'
     },
-    {
-        icon: <CreditCard className="w-6 h-6 text-green-600" />,
-        title: "Billing",
-        description: "Manage your subscriptions and payment methods.",
-        path: '/'
-    },
-    {
-        icon: <Plug className="w-6 h-6 text-purple-600" />,
-        title: "Integration",
-        description: "Connect with third-party apps and services.",
-        path: '/'
-    },
-    {
-        icon: <Phone className="w-6 h-6 text-orange-600" />,
-        title: "Contact Us",
-        description: "Get support or send us your feedback.",
-        path: '/'
-    },
-    {
-        icon: <Globe className="w-6 h-6 text-yellow-600" />,
-        title: "Change Language",
-        description: "Select your preferred language for the application.",
-        path: '/'
-    },
+    // {
+    //     icon: <CreditCard className="w-6 h-6 text-green-600" />,
+    //     title: "Billing",
+    //     description: "Manage your subscriptions and payment methods.",
+    //     path: '/'
+    // },
+    // {
+    //     icon: <Plug className="w-6 h-6 text-purple-600" />,
+    //     title: "Integration",
+    //     description: "Connect with third-party apps and services.",
+    //     path: '/'
+    // },
+    // {
+    //     icon: <Phone className="w-6 h-6 text-orange-600" />,
+    //     title: "Contact Us",
+    //     description: "Get support or send us your feedback.",
+    //     path: '/'
+    // },
+    // {
+    //     icon: <Globe className="w-6 h-6 text-yellow-600" />,
+    //     title: "Change Language",
+    //     description: "Select your preferred language for the application.",
+    //     path: '/'
+    // },
     {
         icon: <Lock className="w-6 h-6 text-red-600" />,
         title: "Change Password",

@@ -15,15 +15,14 @@ const authMiddleware = require("../middleware/authMiddleware")
 const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
 
-//* Path Parameters
 
 router.post("/extract", authMiddleware, upload.single("file"), extractInvoice);
 
-// GET all invoices
-router.get("/api/invoices", getAllInvoiceData);
+//! GET all invoices
+// router.get("/api/invoices", getAllInvoiceData);
 
-// GET invoices based on category
-router.get("/api/invoices/category/:category", getInvoiceDataFromCategory);
+//? GET invoices based on category
+router.get("/api/user-invoices/category/:category", authMiddleware, getInvoiceDataFromCategory);
 
 // GET invoice by id
 router.get("/api/invoices/:id", getInvoiceDataById);
@@ -34,12 +33,11 @@ router.get("/api/invoices/category-count/:category", getCountOfSpecificCategory)
 router.put("/api/invoices/:invoiceId", updateInvoiceData);
 
 // delete invoice
-router.delete("/api/delete-invoice/:invoiceId", deleteInvoiceData);
+router.delete("/api/delete-invoice/:invoiceId", authMiddleware, deleteInvoiceData);
 
 // Get all invoices for a specific user
 router.get("/api/user-invoices", authMiddleware, getUserSpcificInvoice);
 
-//* Filter invoice routes (Query Parameters)
 router.get("/api/invoice-date/", getReceiptsByDateRange);
 
 

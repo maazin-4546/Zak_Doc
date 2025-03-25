@@ -45,7 +45,7 @@ const App = () => {
         {token && !isAuthRoute && <Navbar setIsSidebarOpen={setIsSidebarOpen} />}
 
         {/* Main Content Area */}        
-        <div className="flex-1 overflow-y-auto bg-gradient-to-br from-indigo-50 to-indigo-100">
+        <div className="flex-1 overflow-y-auto bg-gradient-to-br from-indigo-50 to-white">
           <Routes>
             {/* Protected Routes */}
             <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
