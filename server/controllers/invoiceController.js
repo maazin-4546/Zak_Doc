@@ -1,6 +1,7 @@
 const invoiceService = require("../services/invoiceService");
 const Invoice = require("../models/Invoice");
 const Category = require("../models/Category");
+const mongoose = require("mongoose");
 
 const extractInvoice = async (req, res) => {
     try {
@@ -46,25 +47,31 @@ const getUserSpcificInvoice = async (req, res) => {
 const getInvoiceDataFromCategory = async (req, res) => {
     try {
         const { category } = req.params;
-        const userId = req.user._id; // Extracted from authMiddleware
+        const userId = req.user._id;
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ error: "Invalid user ID" });
+        }
 
         const decodedCategory = decodeURIComponent(category);
 
-        // Check if category exists (optional)
-        const existingCategories = await Invoice.distinct("category", { user: userId });
-        if (!existingCategories.includes(decodedCategory)) {
-            return res.status(400).json({ error: "Invalid category" });
-        }
-
-        // Fetch invoices for this user + category
+        // KEY FIX: Changed 'user' to 'userId' to match your schema
         const invoices = await Invoice.find({
-            category: decodedCategory,
-            user: userId // Ensure only user-specific invoices
+            userId: userId,  // ← Changed from 'user' to 'userId'
+            category: decodedCategory
         });
 
-        res.json(invoices);
+        res.json({
+            success: true,
+            data: invoices  // Consistent response format with your other API
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error("Error:", error);
+        res.status(500).json({
+            success: false,
+            error: "Server error",
+            details: error.message
+        });
     }
 };
 
@@ -106,26 +113,32 @@ const getCountOfSpecificCategory = async (req, res) => {
 
 const getReceiptsByDateRange = async (req, res) => {
     try {
-        let { startDate, endDate } = req.query;
+        const { startDate, endDate } = req.query;
+        const userId = req.user._id;
 
+        // Validate inputs
         if (!startDate || !endDate) {
-            return res.status(400).json({ message: "startDate and endDate are required" });
+            return res.status(400).json({
+                success: false,
+                message: "Both startDate and endDate are required"
+            });
         }
 
-        startDate = new Date(startDate);
-        endDate = new Date(endDate);
-        endDate.setHours(23, 59, 59, 999);
-
         const invoices = await Invoice.find({
+            userId: userId,
             createdAt: {
-                $gte: startDate,
-                $lte: endDate,
-            },
+                $gte: new Date(startDate),
+                $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
+            }
         });
 
-        res.json(invoices);
+        res.json({ success: true, data: invoices });
     } catch (error) {
-        res.status(500).json({ message: "Server error", error });
+        res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message
+        });
     }
 };
 

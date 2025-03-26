@@ -38,7 +38,7 @@ router.delete("/api/delete-invoice/:invoiceId", authMiddleware, deleteInvoiceDat
 // Get all invoices for a specific user
 router.get("/api/user-invoices", authMiddleware, getUserSpcificInvoice);
 
-router.get("/api/invoice-date/", getReceiptsByDateRange);
+router.get("/api/invoices/filter/by-date", authMiddleware, getReceiptsByDateRange);
 
 
 

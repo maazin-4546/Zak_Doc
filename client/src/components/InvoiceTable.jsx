@@ -22,7 +22,7 @@ const InvoiceTable = () => {
 
     const tableRef = useRef(null);
 
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
     const [invoices, setInvoices] = useState([]);
     const [searchInput, setSearchInput] = useState("");
@@ -32,6 +32,9 @@ const InvoiceTable = () => {
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState("All");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
 
 
     //* backend Api Call 
@@ -75,7 +78,35 @@ const InvoiceTable = () => {
         fetchData(category);
     };
 
+    const fetchFilteredInvoices = async () => {
+        if (!startDate || !endDate) {
+            alert("Please select both start and end dates");
+            return;
+        }
+        
+        setLoading(true);
+        setError(null);
 
+        const token = localStorage.getItem("token"); // Retrieve token from localStorage
+
+        try {
+            const response = await axios.get("http://localhost:5000/api/invoices/filter/by-date", {
+                params: {
+                    startDate: startDate.toISOString().split("T")[0],
+                    endDate: endDate.toISOString().split("T")[0],
+                },
+                headers: {
+                    Authorization: `Bearer ${token}` // Attach token in headers
+                },
+                withCredentials: true, // Ensure cookies are sent if using authentication
+            });
+            setInvoices(response.data.data);
+        } catch (err) {
+            setError(err.response?.data?.message || "Failed to fetch invoices");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     //* seach query
     const filteredRows = invoices.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
@@ -339,7 +370,7 @@ const InvoiceTable = () => {
                             {/* Date Range Picker */}
                             <div className="flex items-center gap-2 w-full md:w-1/3">
                                 <label className="text-sm text-gray-600 font-medium whitespace-nowrap">Date Range:</label>
-                                <div className="flex w-full space-x-2">
+                                <div className="flex w-full space-x-2 mb-4">
                                     <DatePicker
                                         selected={startDate}
                                         onChange={(date) => setStartDate(date)}
@@ -359,7 +390,15 @@ const InvoiceTable = () => {
                                         placeholderText="End Date"
                                         className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
                                     />
+                                    <button
+                                        onClick={fetchFilteredInvoices}
+                                        className="px-4 py-2 bg-indigo-500 text-white rounded-md shadow-md hover:bg-indigo-600 focus:outline-none"
+                                        disabled={loading}
+                                    >
+                                        {loading ? "Loading..." : "Filter"}
+                                    </button>
                                 </div>
+                                {error && <p className="text-red-500">{error}</p>}
                             </div>
 
                             {/* Export Dropdown */}
@@ -531,7 +570,6 @@ const InvoiceTable = () => {
                                     onChange={handleRowsPerPageChange}
                                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
                                 >
-                                    <option value={5}>5</option>
                                     <option value={10}>10</option>
                                     <option value={25}>25</option>
                                     <option value={50}>50</option>
