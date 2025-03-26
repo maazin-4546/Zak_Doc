@@ -4,11 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
-import { GenerateContext } from "../../Context/ContextAPI";
+import { NavbarContext } from "../../Context/NavbarContext";
 
 export default function Navbar({ setIsSidebarOpen }) {
 
-    const { userName, userEmail } = useContext(GenerateContext)
+    const { userName, userEmail } = useContext(NavbarContext)
 
     const languageRef = useRef(null);
     const profileRef = useRef(null);
@@ -52,15 +52,17 @@ export default function Navbar({ setIsSidebarOpen }) {
             });
 
             localStorage.removeItem("token");
-            window.location.reload();
-            toast.success("logout Successfully")
             setIsLoggedIn(false);
-            navigate("/login");
+            toast.success("Logged out successfully");
+
+            navigate("/login");  // Redirect first
+            setTimeout(() => window.location.reload(), 500); // Reload after redirect
         } catch (error) {
-            toast.error("Something went wrong")
+            toast.error("Something went wrong");
             console.error("Logout failed", error);
         }
     };
+
 
     const languages = [
         { code: "us", name: "English" },

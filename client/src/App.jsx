@@ -8,11 +8,11 @@ import ResetPassword from "./components/Auth/ResetPasswordForm";
 import FileUpload from "./components/FileUpload";
 import Navbar from "./components/Navbar/Navbar";
 import Sidebar from "./components/Sidebar/Sidebar";
-import InvoiceTable from "./components/InvoiceTable";
 import UserProfileForm from "./components/UserProfileForm";
 import SettingsPage from "./components/Settings";
 import ChangePasswordForm from "./components/Auth/ChangePasswordForm";
 import Dashboard from "./components/Dashboard/Dashboard";
+import InvoiceTable from "./components/InvoiceTable/InvoiceTable";
 
 
 const App = () => {

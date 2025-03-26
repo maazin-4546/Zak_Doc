@@ -2,8 +2,9 @@ import React, { useContext, useEffect, useState } from "react";
 import NavbarSecond from "../Navbar/NavbarSecond";
 import DashboardCard from "./DashboardCard";
 import { Briefcase, PieChart, Calendar, Receipt, List } from "lucide-react";
-import { GenerateContext } from "../../Context/ContextAPI";
+import { NavbarContext } from "../../Context/NavbarContext";
 import axios from "axios";
+import { DashboardContext } from "../../Context/DashboardContext";
 
 
 const dashboardData = [
@@ -16,83 +17,15 @@ const dashboardData = [
 
 const Dashboard = () => {
 
-  const { userName } = useContext(GenerateContext)
-
-  const [invoiceCount, setInvoiceCount] = useState(0)
-  const [totalInvoiceAmount, setTotalInvoiceAmount] = useState(0);
-
-  //* total receipt count
-  useEffect(() => {
-    const fetchInvoiceCount = async () => {
-      try {
-        const response = await fetch("http://localhost:5000/api/user-invoices", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}` // Assuming JWT auth
-          }
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          setInvoiceCount(data.data.length); // Count total invoices
-        } else {
-          throw new Error(data.error || "Failed to fetch invoices");
-        }
-      } catch (err) {
-        console.log(err.message);
-      }
-    };
-
-    fetchInvoiceCount();
-  }, []);
-
-
-  //* sum of total amount
-  const getUserInvoicesTotal = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("No token found");
-        return;
-      }
-
-      const response = await axios.get("http://localhost:5000/api/user-invoices", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.data.success) {
-        const invoices = response.data.data;
-        const totalSum = invoices.reduce((acc, invoice) => {
-          const amount = parseFloat(invoice.total.replace(/[^0-9.]/g, "")) || 0;
-          return acc + amount;
-        }, 0);
-        return totalSum;
-      }
-    } catch (error) {
-      console.error("Error fetching invoices:", error);
-    }
-  };
-
-  useEffect(() => {
-    const fetchTotal = async () => {
-      const sum = await getUserInvoicesTotal();
-      if (sum !== undefined) {
-        setTotalInvoiceAmount(sum);
-      }
-    };
-    fetchTotal();
-  }, []);
+  const { userName } = useContext(NavbarContext)
+  const { totalInvoiceAmount, invoiceCount } = useContext(DashboardContext)
 
   return (
     <div>
       <NavbarSecond title="Dashboard" path="/ Dashboard" />
       <div>
         <div className="mt-8 md:ml-8 sm:text-left text-center">
-          <h1 className="text-2xl font-bold text-gray-800">{userName}</h1>          
+          <h1 className="text-2xl font-bold text-gray-800">{userName}</h1>
           <p className="text-gray-500">Welcome to Your Dashboard!</p>
         </div>
         <div className="p-6">

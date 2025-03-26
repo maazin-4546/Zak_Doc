@@ -4,15 +4,9 @@ import { useState, useEffect } from "react";
 import "react-toastify/dist/ReactToastify.css";
 
 
-export const GenerateContext = createContext()
+export const NavbarContext = createContext()
 
-export const ContextProvider = ({ children }) => {
-
-    // ! Invoice
-    const [invoices, setInvoices] = useState([]);
-    const [isOpen, setIsOpen] = useState(false);
-    const [jsonData, setJsonData] = useState(null);
-
+export const NavbarContextProvider = ({ children }) => {
 
     //! Navbar
     const [userName, setUserName] = useState("");
@@ -56,9 +50,9 @@ export const ContextProvider = ({ children }) => {
     }, []);
 
     return (
-        <GenerateContext.Provider value={{ invoices, setInvoices, isOpen, setIsOpen, jsonData, setJsonData, userName, userEmail }}>
+        <NavbarContext.Provider value={{ userName, userEmail }}>
             {children}
-        </GenerateContext.Provider>
+        </NavbarContext.Provider>
     )
 }
 
