@@ -12,7 +12,7 @@ import InvoiceTable from "./components/InvoiceTable";
 import UserProfileForm from "./components/UserProfileForm";
 import SettingsPage from "./components/Settings";
 import ChangePasswordForm from "./components/Auth/ChangePasswordForm";
-import Dashboard from "./components/Dashboard";
+import Dashboard from "./components/Dashboard/Dashboard";
 
 
 const App = () => {

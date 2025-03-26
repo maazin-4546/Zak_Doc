@@ -15,6 +15,7 @@ import UpdateInvoiceModal from "./Modals/UpdateModal";
 import { GenerateContext } from "../Context/ContextAPI";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import dayjs from "dayjs";
 
 const InvoiceTable = () => {
 
@@ -32,8 +33,6 @@ const InvoiceTable = () => {
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState("All");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
 
 
 
@@ -78,38 +77,35 @@ const InvoiceTable = () => {
         fetchData(category);
     };
 
-    const fetchFilteredInvoices = async () => {
+    const fetchFilteredInvoicesByDate = async () => {
         if (!startDate || !endDate) {
-            alert("Please select both start and end dates");
+            toast.error("Please select both the dates");
             return;
         }
-        
-        setLoading(true);
-        setError(null);
 
-        const token = localStorage.getItem("token"); // Retrieve token from localStorage
-
+        const token = localStorage.getItem("token");
         try {
             const response = await axios.get("http://localhost:5000/api/invoices/filter/by-date", {
                 params: {
-                    startDate: startDate.toISOString().split("T")[0],
-                    endDate: endDate.toISOString().split("T")[0],
+                    startDate: dayjs(startDate).format("YYYY-MM-DD"),
+                    endDate: dayjs(endDate).format("YYYY-MM-DD"),
                 },
                 headers: {
-                    Authorization: `Bearer ${token}` // Attach token in headers
+                    Authorization: `Bearer ${token}`
                 },
-                withCredentials: true, // Ensure cookies are sent if using authentication
+                withCredentials: true,
             });
+
             setInvoices(response.data.data);
         } catch (err) {
-            setError(err.response?.data?.message || "Failed to fetch invoices");
-        } finally {
-            setLoading(false);
+            console.error("Error fetching invoices:", err.response?.data || err.message);
         }
     };
 
     //* seach query
-    const filteredRows = invoices.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+    // const filteredRows = invoices.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+    const filteredRows = invoices?.length ? invoices.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage) : [];
+
 
     const searchedRows = filteredRows.filter((invoice) => {
         const vendorName = invoice.vendor_name?.toLowerCase() || ""; // Convert null to empty string
@@ -119,7 +115,9 @@ const InvoiceTable = () => {
     const displayedRows = searchedRows.slice(0, rowsPerPage);
 
     //* Pagination calculations
-    const totalPages = Math.ceil(invoices.length / rowsPerPage);
+    // const totalPages = Math.ceil(invoices.length / rowsPerPage);
+    const totalPages = invoices ? Math.ceil(invoices.length / rowsPerPage) : 1;
+
     const startRow = (currentPage - 1) * rowsPerPage;
 
     const handlePageChange = (pageNumber) => {
@@ -334,9 +332,9 @@ const InvoiceTable = () => {
                     <div className="bg-white relative overflow-x-auto shadow-md py-4 p-2 md:p-6 mt-6 md:mt-8">
 
                         {/* Top Controls */}
-                        <div className="my-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-2 px-2">
+                        <div className="my-6 flex flex-col md:flex-row items-center justify-between gap-4 px-2 w-full">
                             {/* Search Bar */}
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 w-full md:w-1/4">
                                 <label className="text-sm text-gray-600 font-medium">Search:</label>
                                 <input
                                     type="search"
@@ -363,48 +361,51 @@ const InvoiceTable = () => {
                                     <option value="Medical & Healthcare">Medical & Healthcare</option>
                                     <option value="Housing & Rent">Housing & Rent</option>
                                 </select>
-
-
                             </div>
 
                             {/* Date Range Picker */}
                             <div className="flex items-center gap-2 w-full md:w-1/3">
                                 <label className="text-sm text-gray-600 font-medium whitespace-nowrap">Date Range:</label>
-                                <div className="flex w-full space-x-2 mb-4">
+                                <div className="flex items-center justify-center w-full space-x-2">
                                     <DatePicker
                                         selected={startDate}
-                                        onChange={(date) => setStartDate(date)}
+                                        onChange={(date) => setStartDate(dayjs(date).toDate())}
                                         selectsStart
                                         startDate={startDate}
                                         endDate={endDate}
                                         placeholderText="Start Date"
+                                        dateFormat="yyyy-MM-dd"
                                         className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
                                     />
+
                                     <DatePicker
                                         selected={endDate}
-                                        onChange={(date) => setEndDate(date)}
+                                        onChange={(date) => setEndDate(dayjs(date).toDate())}
                                         selectsEnd
                                         startDate={startDate}
                                         endDate={endDate}
                                         minDate={startDate}
                                         placeholderText="End Date"
+                                        dateFormat="yyyy-MM-dd"
                                         className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
                                     />
+
                                     <button
-                                        onClick={fetchFilteredInvoices}
-                                        className="px-4 py-2 bg-indigo-500 text-white rounded-md shadow-md hover:bg-indigo-600 focus:outline-none"
-                                        disabled={loading}
+                                        onClick={fetchFilteredInvoicesByDate}
+                                        className="px-4 py-1.5 cursor-pointer bg-indigo-500 text-white rounded-md shadow-md hover:bg-indigo-600 focus:outline-none"
                                     >
-                                        {loading ? "Loading..." : "Filter"}
+                                        Filter
                                     </button>
                                 </div>
-                                {error && <p className="text-red-500">{error}</p>}
                             </div>
 
                             {/* Export Dropdown */}
                             <div className="flex items-center gap-2 w-full md:w-1/6">
                                 <label className="text-sm text-gray-600 font-medium whitespace-nowrap">Export:</label>
-                                <select onChange={handleExport} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer">
+                                <select
+                                    onChange={handleExport}
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                                >
                                     <option value="">Select</option>
                                     <option value="PDF">PDF</option>
                                     <option value="Excel">Excel</option>
@@ -412,6 +413,7 @@ const InvoiceTable = () => {
                                 </select>
                             </div>
                         </div>
+
 
                         {/* Table */}
                         <div className="p-4">
@@ -580,7 +582,9 @@ const InvoiceTable = () => {
 
                             {/* Pagination Info */}
                             <p className="text-md text-gray-500">
-                                Showing {startRow + 1} to {Math.min(startRow + rowsPerPage, invoices.length)} of {invoices.length} entries
+                                {/* Showing {startRow + 1} to {Math.min(startRow + rowsPerPage, invoices.length)} of {invoices.length} entries */}
+                                Showing {startRow + 1} to {Math.min(startRow + rowsPerPage, invoices?.length || 0)} of {invoices?.length || 0} entries
+
                             </p>
 
                             {/* Pagination Buttons */}

@@ -4,9 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
+import { GenerateContext } from "../../Context/ContextAPI";
 
 export default function Navbar({ setIsSidebarOpen }) {
 
+    const { userName, userEmail } = useContext(GenerateContext)
 
     const languageRef = useRef(null);
     const profileRef = useRef(null);
@@ -17,8 +19,6 @@ export default function Navbar({ setIsSidebarOpen }) {
     const navigate = useNavigate()
 
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [userName, setUserName] = useState("");
-    const [userEmail, setUserEmail] = useState("");
 
 
 
@@ -36,43 +36,6 @@ export default function Navbar({ setIsSidebarOpen }) {
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, []);
-
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-
-        if (token) {
-            try {
-                // Decode JWT token payload
-                const base64Url = token.split(".")[1];
-                if (base64Url) {
-                    const decodedToken = JSON.parse(atob(base64Url));
-
-                    const firstName = decodedToken?.firstName?.trim() || "";
-                    const lastName = decodedToken?.lastName?.trim() || "";
-                    const email = decodedToken?.email?.trim() || "";
-
-                    // Capitalize first letter of each name
-                    const formatName = (name) =>
-                        name ? name.charAt(0).toUpperCase() + name.slice(1).toLowerCase() : "";
-
-                    const fullName = `${formatName(firstName)} ${formatName(lastName)}`.trim();
-
-                    setUserName(fullName || "Guest");
-                    setUserEmail(email || "Guest@gmail.com");
-                } else {
-                    setUserName("Guest");
-                    setUserEmail("Guest@gmail.com");
-                }
-            } catch (error) {
-                console.error("Error decoding token:", error);
-                setUserName("Guest");
-                setUserEmail("Guest@gmail.com");
-            }
-        } else {
-            setUserName("Guest");
-            setUserEmail("Guest@gmail.com");
-        }
     }, []);
 
     // Check login status on mount
