@@ -9,7 +9,10 @@ const {
     getCountOfSpecificCategory,
     getReceiptsByDateRange,
     getUserSpcificInvoice,
-    deleteInvoiceData
+    deleteInvoiceData,
+    getAmountWeeklySpending,
+    getCategoryWiseSpending,
+    getInvoiceCategoryCount
 } = require("../controllers/invoiceController");
 const authMiddleware = require("../middleware/authMiddleware")
 const multer = require("multer");
@@ -40,6 +43,11 @@ router.get("/api/user-invoices", authMiddleware, getUserSpcificInvoice);
 
 router.get("/api/invoices/filter/by-date", authMiddleware, getReceiptsByDateRange);
 
+router.get("/api/user-weekly-amounts", authMiddleware, getAmountWeeklySpending);
+
+router.get("/api/categorywise-spending", authMiddleware, getCategoryWiseSpending);
+
+router.get("/api/invoice-category-count", authMiddleware, getInvoiceCategoryCount);
 
 
 module.exports = router;

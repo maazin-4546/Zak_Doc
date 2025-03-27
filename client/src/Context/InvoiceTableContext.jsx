@@ -96,10 +96,8 @@ export const InvoiceTableContextProvider = ({ children }) => {
         }
     };
 
-
     //* seach query    
     const filteredRows = invoices?.length ? invoices.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage) : [];
-
 
     const searchedRows = filteredRows.filter((invoice) => {
         const vendorName = invoice.vendor_name?.toLowerCase() || ""; // Convert null to empty string
@@ -205,15 +203,15 @@ export const InvoiceTableContextProvider = ({ children }) => {
 
     const exportToExcel = () => {
         if (!tableRef.current) return;
-
-        // Create a new workbook and worksheet
+        
         const workbook = XLSX.utils.book_new();
         const worksheet = XLSX.utils.aoa_to_sheet([]);
 
         // Extract headers
         const headers = [
             "Invoice",
-            "Date",
+            "Invoice Date",
+            "Upload Date",
             "Company Name",
             "Vendor Name",
             "Products",
@@ -224,8 +222,7 @@ export const InvoiceTableContextProvider = ({ children }) => {
             "Total",
         ];
         XLSX.utils.sheet_add_aoa(worksheet, [headers], { origin: "A1" });
-
-        // Extract table data
+    
         const tableRows = Array.from(tableRef.current.querySelectorAll("tbody tr")).map((row) => {
             const cells = row.querySelectorAll("td");
 
@@ -234,39 +231,42 @@ export const InvoiceTableContextProvider = ({ children }) => {
             const quantities = [];
             const unitAmounts = [];
 
-            // Get product details from the Products column
-            const productListItems = cells[4]?.querySelectorAll("li");
+            // Ensure correct column indexing
+            const productListItems = cells[5]?.querySelectorAll("li"); 
             productListItems?.forEach((li, idx) => {
                 products.push(li.textContent.trim());
-                quantities.push(cells[5]?.querySelectorAll("div")[idx]?.textContent.trim() || "0");
-                unitAmounts.push(cells[6]?.querySelectorAll("div")[idx]?.textContent.trim() || "₹0");
+                
+                quantities.push(cells[7]?.querySelectorAll("div")[idx]?.textContent.trim() || "0");
+                unitAmounts.push(cells[8]?.querySelectorAll("div")[idx]?.textContent.trim() || "₹0");
             });
 
             return [
-                cells[0]?.textContent.trim() || "null",
-                cells[1]?.textContent.trim() || "null",
-                cells[2]?.textContent.trim() || "null",
-                cells[3]?.textContent.trim() || "null",
-                products.join("\n"),
-                cells[5]?.textContent.trim() || "null",
-                quantities.join("\n"),
-                unitAmounts.join("\n"),
-                cells[8]?.textContent.trim() || "₹0",
-                cells[9]?.textContent.trim() || "₹0",
+                cells[0]?.textContent.trim() || "null", // Invoice
+                cells[1]?.textContent.trim() || "null", // Invoice Date
+                cells[2]?.textContent.trim() || "null", // Upload Date
+                cells[3]?.textContent.trim() || "null", // Company Name
+                cells[4]?.textContent.trim() || "null", // Vendor Name
+                products.join("\n"), // Products
+                cells[6]?.textContent.trim() || "null", // Category
+                quantities.join("\n"), // Quantity
+                unitAmounts.join("\n"), // Unit Amount
+                cells[9]?.textContent.trim() || "₹0", // Tax Amount
+                cells[10]?.textContent.trim() || "₹0", // Total
             ];
         });
 
-        // Add data to worksheet
+        
         XLSX.utils.sheet_add_aoa(worksheet, tableRows, { origin: "A2" });
-
-        // Adjust column widths for readability
+        
         worksheet["!cols"] = [
+            { wch: 15 },
+            { wch: 15 },
+            { wch: 15 },
             { wch: 15 },
             { wch: 15 },
             { wch: 25 },
             { wch: 25 },
             { wch: 40 },
-            { wch: 15 },
             { wch: 15 },
             { wch: 15 },
             { wch: 15 },

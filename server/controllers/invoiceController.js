@@ -2,6 +2,8 @@ const invoiceService = require("../services/invoiceService");
 const Invoice = require("../models/Invoice");
 const Category = require("../models/Category");
 const mongoose = require("mongoose");
+const moment = require("moment");
+
 
 const extractInvoice = async (req, res) => {
     try {
@@ -227,6 +229,99 @@ const deleteInvoiceData = async (req, res) => {
     }
 };
 
+// API to get total weekly spending
+const getAmountWeeklySpending = async (req, res) => {
+    try {
+        // Fetch user-specific invoices
+        const invoices = await Invoice.find({ userId: req.user._id });
+
+        // Process data for weekly aggregation
+        const weeklyData = {};
+
+        invoices.forEach(invoice => {
+            const createdAt = moment(invoice.createdAt).startOf("week").format("YYYY-MM-DD");
+
+            // Convert total to a number (remove "$" sign if exists)
+            const totalAmount = parseFloat(invoice.total.replace(/[^0-9.]/g, ""));
+
+            if (!weeklyData[createdAt]) {
+                weeklyData[createdAt] = 0;
+            }
+            weeklyData[createdAt] += totalAmount;
+        });
+
+        // Convert object to array for graph consumption
+        const result = Object.keys(weeklyData).map(date => ({
+            weekStart: date,
+            total: weeklyData[date]
+        }));
+
+        res.json({ success: true, data: result });
+    } catch (error) {
+        console.error("Error fetching weekly amounts:", error.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+// API to get categorywise spending
+const getCategoryWiseSpending = async (req, res) => {
+    try {
+        // Fetch invoices for the logged-in user
+        const invoices = await Invoice.find({ userId: req.user._id });
+
+        // Object to store category-wise spending
+        const categorySpending = {};
+
+        invoices.forEach(invoice => {
+            const category = invoice.category;
+
+            // Convert total to a number (remove currency symbols, commas)
+            const totalAmount = parseFloat(invoice.total.replace(/[^\d.-]/g, ""));
+
+            if (!categorySpending[category]) {
+                categorySpending[category] = 0;
+            }
+            categorySpending[category] += totalAmount;
+        });
+
+        // Convert object into array for frontend consumption
+        const result = Object.keys(categorySpending).map(category => ({
+            category,
+            total: categorySpending[category]
+        }));
+
+        res.json({ success: true, data: result });
+    } catch (error) {
+        console.error("Error fetching category spending:", error.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+// CategoryWise count the receipt
+const getInvoiceCategoryCount = async (req, res) => {
+    try {
+        const categoryCount = await Invoice.aggregate([
+            {
+                $match: { userId: req.user._id } 
+            },
+            {
+                $group: {
+                    _id: "$category", // Group by category
+                    count: { $sum: 1 } // Count occurrences
+                }
+            }
+        ]);
+
+        const totalReceipts = categoryCount.reduce((sum, category) => sum + category.count, 0);
+
+        res.json({ success: true, data: categoryCount, totalReceipts });
+    } catch (error) {
+        console.error("Error fetching category count:", error.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+
 module.exports = {
     extractInvoice,
     getAllInvoiceData,
@@ -236,5 +331,8 @@ module.exports = {
     getCountOfSpecificCategory,
     getReceiptsByDateRange,
     getUserSpcificInvoice,
-    deleteInvoiceData
+    deleteInvoiceData,
+    getAmountWeeklySpending,
+    getCategoryWiseSpending,
+    getInvoiceCategoryCount
 };

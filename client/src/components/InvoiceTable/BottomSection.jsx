@@ -3,7 +3,7 @@ import { InvoiceTableContext } from '../../Context/InvoiceTableContext'
 
 const BottomSection = () => {
 
-        const { isOpen, setIsOpen, jsonData, setJsonData, invoices, handleCategoryChange, fetchFilteredInvoicesByDate, displayedRows, totalPages, startRow, handlePageChange, handleRowsPerPageChange, handleExport, tableRef, deleteInvoice, selectedCategory, searchInput, setSearchInput, rowsPerPage, currentPage, startDate, setStartDate, endDate, setEndDate } = useContext(InvoiceTableContext)
+    const { isOpen, setIsOpen, jsonData, setJsonData, invoices, handleCategoryChange, fetchFilteredInvoicesByDate, displayedRows, totalPages, startRow, handlePageChange, handleRowsPerPageChange, handleExport, tableRef, deleteInvoice, selectedCategory, searchInput, setSearchInput, rowsPerPage, currentPage, startDate, setStartDate, endDate, setEndDate } = useContext(InvoiceTableContext)
 
     return (
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 px-2 my-6">

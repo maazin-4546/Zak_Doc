@@ -8,39 +8,12 @@ export const DashboardContext = createContext()
 
 export const DashboardContextProvider = ({ children }) => {
 
-
-    const [invoiceCount, setInvoiceCount] = useState(0)
     const [totalInvoiceAmount, setTotalInvoiceAmount] = useState(0);
 
+    const [categoryCounts, setCategoryCounts] = useState([]);
+    const [totalReceipts, setTotalReceipts] = useState(0);
+
     const token = localStorage.getItem('token');
-
-    //* total receipt count
-    useEffect(() => {
-        const fetchInvoiceCount = async () => {
-            try {
-                const response = await fetch("http://localhost:5000/api/user-invoices", {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}` // Assuming JWT auth
-                    }
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    setInvoiceCount(data.data.length); // Count total invoices
-                } else {
-                    throw new Error(data.error || "Failed to fetch invoices");
-                }
-            } catch (err) {
-                console.log(err.message);
-            }
-        };
-
-        fetchInvoiceCount();
-    }, []);
-
 
     //* sum of total amount
     const getUserInvoicesTotal = async () => {
@@ -79,8 +52,34 @@ export const DashboardContextProvider = ({ children }) => {
         fetchTotal();
     }, []);
 
+
+    // * Receipt count based on category
+    useEffect(() => {
+        const fetchCategoryCount = async () => {
+            try {
+                const response = await axios.get("http://localhost:5000/api/invoice-category-count", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                if (response.data.success) {
+                    setCategoryCounts(response.data.data);  
+                    setTotalReceipts(response.data.totalReceipts); 
+                } else {
+                    console.log("Failed to fetch data");
+                }
+            } catch (error) {
+                console.error("API Error:", error);
+            }
+        };
+
+        fetchCategoryCount();
+    }, []);
+
+
     return (
-        <DashboardContext.Provider value={{ totalInvoiceAmount, invoiceCount }}>
+        <DashboardContext.Provider value={{ totalInvoiceAmount, categoryCounts, totalReceipts }}>
             {children}
         </DashboardContext.Provider>
     )

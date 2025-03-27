@@ -14,7 +14,6 @@ import ChangePasswordForm from "./components/Auth/ChangePasswordForm";
 import Dashboard from "./components/Dashboard/Dashboard";
 import InvoiceTable from "./components/InvoiceTable/InvoiceTable";
 
-
 const App = () => {
 
   const location = useLocation();
@@ -36,7 +35,7 @@ const App = () => {
   );
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden">      
+    <div className="h-screen w-screen flex overflow-hidden">
       {token && !isAuthRoute && (
         <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       )}
@@ -44,7 +43,7 @@ const App = () => {
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {token && !isAuthRoute && <Navbar setIsSidebarOpen={setIsSidebarOpen} />}
 
-        {/* Main Content Area */}        
+        {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto bg-gradient-to-br from-indigo-50 to-white">
           <Routes>
             {/* Protected Routes */}
@@ -60,6 +59,7 @@ const App = () => {
             <Route path="/register" element={!token ? <RegisterForm /> : <Navigate to="/dashboard" replace />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
+
           </Routes>
         </div>
       </div>

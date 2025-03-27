@@ -2,6 +2,7 @@ import React, { useContext } from 'react'
 import { InvoiceTableContext } from '../../Context/InvoiceTableContext'
 import DatePicker from 'react-datepicker'
 import dayjs from 'dayjs'
+import { Search } from "lucide-react";
 
 const TopControls = () => {
 
@@ -68,9 +69,9 @@ const TopControls = () => {
 
                     <button
                         onClick={fetchFilteredInvoicesByDate}
-                        className="px-4 py-1.5 cursor-pointer bg-indigo-500 text-white rounded-md shadow-md hover:bg-indigo-600 focus:outline-none"
+                        className="px-4 py-2 cursor-pointer bg-indigo-500 text-white rounded-md shadow-md hover:bg-indigo-600 focus:outline-none flex items-center justify-center"
                     >
-                        Filter
+                        <Search className="w-5 h-5" />
                     </button>
                 </div>
             </div>
