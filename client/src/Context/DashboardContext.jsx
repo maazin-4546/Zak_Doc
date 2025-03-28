@@ -8,48 +8,36 @@ export const DashboardContext = createContext()
 
 export const DashboardContextProvider = ({ children }) => {
 
-    const [totalInvoiceAmount, setTotalInvoiceAmount] = useState(0);
-
     const [categoryCounts, setCategoryCounts] = useState([]);
     const [totalReceipts, setTotalReceipts] = useState(0);
+    const [categoryData, setCategoryData] = useState([]);
+    const [totalSpending, setTotalSpending] = useState(0);
+    const [weeklyData, setWeeklyData] = useState([]);
+
 
     const token = localStorage.getItem('token');
 
-    //* sum of total amount
-    const getUserInvoicesTotal = async () => {
-        try {
-            if (!token) {
-                console.warn("No token found");
-                return;
-            }
-
-            const response = await axios.get("http://localhost:5000/api/user-invoices", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            if (response.data.success) {
-                const invoices = response.data.data;
-                const totalSum = invoices.reduce((acc, invoice) => {
-                    const amount = parseFloat(invoice.total.replace(/[^0-9.]/g, "")) || 0;
-                    return acc + amount;
-                }, 0);
-                return totalSum;
-            }
-        } catch (error) {
-            console.warn("Error fetching invoices:", error);
-        }
-    };
-
+    //* category-wise spending and total amount
     useEffect(() => {
-        const fetchTotal = async () => {
-            const sum = await getUserInvoicesTotal();
-            if (sum !== undefined) {
-                setTotalInvoiceAmount(sum);
+        const fetchCategoryWiseSpending = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                const response = await axios.get("http://localhost:5000/api/categorywise-spending", {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                if (response.data.success) {
+                    setCategoryData(response.data.data);
+                    setTotalSpending(response.data.totalSpending);
+                } else {
+                    console.log("Failed to fetch data");
+                }
+            } catch (err) {
+                console.error("Error fetching category-wise spending:", err);
             }
         };
-        fetchTotal();
+
+        fetchCategoryWiseSpending();
     }, []);
 
 
@@ -64,8 +52,8 @@ export const DashboardContextProvider = ({ children }) => {
                 });
 
                 if (response.data.success) {
-                    setCategoryCounts(response.data.data);  
-                    setTotalReceipts(response.data.totalReceipts); 
+                    setCategoryCounts(response.data.data);
+                    setTotalReceipts(response.data.totalReceipts);
                 } else {
                     console.log("Failed to fetch data");
                 }
@@ -78,8 +66,34 @@ export const DashboardContextProvider = ({ children }) => {
     }, []);
 
 
+    //* Total weekly spendings(Line Chart)
+    const fetchWeeklySpending = async () => {
+        try {
+            const response = await axios.get("http://localhost:5000/api/user-weekly-amounts", {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            });
+
+            return response.data.success ? response.data.data : [];
+        } catch (error) {
+            console.error("Error fetching weekly spending:", error);
+            return [];
+        }
+    };
+
+    useEffect(() => {
+        const getData = async () => {
+            const data = await fetchWeeklySpending();
+            setWeeklyData(data);
+        };
+
+        getData();
+    }, []);
+
+
     return (
-        <DashboardContext.Provider value={{ totalInvoiceAmount, categoryCounts, totalReceipts }}>
+        <DashboardContext.Provider value={{ categoryCounts, totalReceipts, categoryData, totalSpending, weeklyData }}>
             {children}
         </DashboardContext.Provider>
     )

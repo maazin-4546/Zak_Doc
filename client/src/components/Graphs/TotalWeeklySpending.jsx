@@ -8,37 +8,12 @@ import { DashboardContext } from '../../Context/DashboardContext';
 
 const TotalWeeklySpending = () => {
 
-    const { totalInvoiceAmount } = useContext(DashboardContext)
-    const [weeklyData, setWeeklyData] = useState([]);
-
-    const fetchWeeklySpending = async () => {
-        try {
-            const response = await axios.get("http://localhost:5000/api/user-weekly-amounts", {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            });
-
-            return response.data.success ? response.data.data : [];
-        } catch (error) {
-            console.error("Error fetching weekly spending:", error);
-            return [];
-        }
-    };
-
-    useEffect(() => {
-        const getData = async () => {
-            const data = await fetchWeeklySpending();
-            setWeeklyData(data);
-        };
-
-        getData();
-    }, []);
-
+    const { totalSpending, weeklyData } = useContext(DashboardContext)
 
     return (
         <>
             {/* <NavbarSecond title="Total Spend's" path="/ Dashboard / Total" /> */}
+
             {/* Main Container */}
             <div className="bg-gray-50 p-6 sm:p-10 rounded-lg shadow-md max-w-6xl mx-auto text-center transition-transform duration-300 ease-in-out mt-16 sm:mt-24 mb-16 sm:mb-20">
                 <h2 className="mt-4 sm:mt-8 text-3xl sm:text-4xl text-gray-800">Total Amount</h2>
@@ -46,7 +21,7 @@ const TotalWeeklySpending = () => {
                 {/* Info Box */}
                 <div className="my-8 sm:my-12 bg-indigo-100 p-5 sm:p-8 rounded-md shadow-sm max-w-6xl mx-auto">
                     <p className="text-lg sm:text-xl text-gray-600">Total Amount Spend's (Week)</p>
-                    <h2 className="font-extrabold text-3xl sm:text-4xl text-indigo-500">{totalInvoiceAmount}</h2>
+                    <h2 className="font-extrabold text-3xl sm:text-4xl text-indigo-500">{totalSpending}</h2>
                 </div>
 
                 {/* Chart Container */}

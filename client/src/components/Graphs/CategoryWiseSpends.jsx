@@ -10,30 +10,7 @@ const COLORS = ["#4F46E5", "#14B8A6", "#F59E0B", "#EF4444", "#6366F1", "#10B981"
 
 const CategoryWiseSpends = () => {
 
-    const { totalInvoiceAmount } = useContext(DashboardContext)
-
-    const [categoryData, setCategoryData] = useState([]);
-
-    useEffect(() => {
-        const fetchCategoryWiseSpending = async () => {
-            try {
-                const token = localStorage.getItem("token");
-                const response = await axios.get("http://localhost:5000/api/categorywise-spending", {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-
-                if (response.data.success) {
-                    setCategoryData(response.data.data);
-                } else {
-                    cosnole.log("Failed to fetch data");
-                }
-            } catch (err) {
-                console.error("Error fetching category-wise spending:", err);
-            }
-        };
-
-        fetchCategoryWiseSpending();
-    }, []);
+    const { totalSpending, categoryData } = useContext(DashboardContext)
 
     // Custom Tooltip
     const CustomTooltip = ({ active, payload }) => {
@@ -60,7 +37,7 @@ const CategoryWiseSpends = () => {
                 {/* Info Box */}
                 <div className="my-8 sm:my-12 bg-indigo-100 p-5 sm:p-8 rounded-md shadow-sm max-w-5xl mx-auto">
                     <p className="text-lg sm:text-xl text-gray-600">Total Amount Spend's (Week)</p>
-                    <h2 className="font-extrabold text-3xl sm:text-4xl text-indigo-500">{totalInvoiceAmount}</h2>
+                    <h2 className="font-extrabold text-3xl sm:text-4xl text-indigo-500">{totalSpending}</h2>
                 </div>
 
                 {/* Chart Container - Increased Width */}

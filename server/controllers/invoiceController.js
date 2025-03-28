@@ -25,15 +25,6 @@ const extractInvoice = async (req, res) => {
     }
 };
 
-const getAllInvoiceData = async (req, res) => {
-    try {
-        const invoices = await Invoice.find({});
-        res.json(invoices);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-}
-
 const getUserSpcificInvoice = async (req, res) => {
     try {
         // Fetch invoices where userId matches the logged-in user
@@ -266,11 +257,12 @@ const getAmountWeeklySpending = async (req, res) => {
 // API to get categorywise spending
 const getCategoryWiseSpending = async (req, res) => {
     try {
-        // Fetch invoices for the logged-in user
+        
         const invoices = await Invoice.find({ userId: req.user._id });
 
         // Object to store category-wise spending
         const categorySpending = {};
+        let totalSpending = 0; 
 
         invoices.forEach(invoice => {
             const category = invoice.category;
@@ -282,6 +274,7 @@ const getCategoryWiseSpending = async (req, res) => {
                 categorySpending[category] = 0;
             }
             categorySpending[category] += totalAmount;
+            totalSpending += totalAmount; 
         });
 
         // Convert object into array for frontend consumption
@@ -289,8 +282,12 @@ const getCategoryWiseSpending = async (req, res) => {
             category,
             total: categorySpending[category]
         }));
-
-        res.json({ success: true, data: result });
+        
+        res.json({
+            success: true,
+            data: result,
+            totalSpending 
+        });
     } catch (error) {
         console.error("Error fetching category spending:", error.message);
         res.status(500).json({ error: "Internal server error" });
@@ -302,7 +299,7 @@ const getInvoiceCategoryCount = async (req, res) => {
     try {
         const categoryCount = await Invoice.aggregate([
             {
-                $match: { userId: req.user._id } 
+                $match: { userId: req.user._id }
             },
             {
                 $group: {
@@ -323,8 +320,7 @@ const getInvoiceCategoryCount = async (req, res) => {
 
 
 module.exports = {
-    extractInvoice,
-    getAllInvoiceData,
+    extractInvoice,    
     updateInvoiceData,
     getInvoiceDataFromCategory,
     getInvoiceDataById,

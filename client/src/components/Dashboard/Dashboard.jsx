@@ -12,7 +12,8 @@ import TotalWeeklySpending from "../Graphs/TotalWeeklySpending";
 const Dashboard = () => {
 
   const { userName } = useContext(NavbarContext)
-  const { totalInvoiceAmount, totalReceipts } = useContext(DashboardContext)
+  const { totalReceipts, totalSpending } = useContext(DashboardContext)
+
 
   return (
     <div>
@@ -47,7 +48,7 @@ const Dashboard = () => {
       <div className="p-6">
         <div className="flex justify-center items-center space-x-4 flex-wrap">
           <DashboardCard
-            title={totalInvoiceAmount}
+            title={totalSpending}
             description={"Total Amount Spend"}
             icon={<Briefcase className="w-10 h-10 text-blue-600" />}
           />
@@ -57,7 +58,7 @@ const Dashboard = () => {
             icon={<Receipt className="w-10 h-10 text-purple-600" />}
           />
           <DashboardCard
-            title={"05"}
+            title={"06"}
             description={"Total Categories"}
             icon={<PieChart className="w-10 h-10 text-green-600" />}
           />
@@ -69,7 +70,7 @@ const Dashboard = () => {
         <div className="mb-2 w-full">
           <TotalWeeklySpending />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <div className="p-2 rounded-lg">
             <CategoryWiseSpends />

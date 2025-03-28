@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const {
-    getAllInvoiceData,
     extractInvoice,
     updateInvoiceData,
     getInvoiceDataFromCategory,
@@ -20,9 +19,6 @@ const upload = multer({ dest: "uploads/" });
 
 
 router.post("/extract", authMiddleware, upload.single("file"), extractInvoice);
-
-//! GET all invoices
-// router.get("/api/invoices", getAllInvoiceData);
 
 //? GET invoices based on category
 router.get("/api/user-invoices/category/:category", authMiddleware, getInvoiceDataFromCategory);
