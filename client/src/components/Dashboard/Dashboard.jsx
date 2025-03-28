@@ -8,12 +8,23 @@ import CategoryWiseSpends from "../Graphs/CategoryWiseSpends";
 import CategoryCount from "../Graphs/CategoryCount";
 import TotalWeeklySpending from "../Graphs/TotalWeeklySpending";
 
-
 const Dashboard = () => {
 
   const { userName } = useContext(NavbarContext)
-  const { totalReceipts, totalSpending } = useContext(DashboardContext)
+  const { totalReceipts, totalSpending, filter, setFilter, totalCategories } = useContext(DashboardContext)
 
+  const filterOptions = {
+    "All Time": "all",
+    "Last 7 Days": "7d",
+    "Last 14 Days": "14d",
+    "Last 1 Month": "1m",
+    "Last 3 Months": "3m",
+    "Last 6 Months": "6m",
+    "Last 1 Year": "1y",
+  };
+
+  // Get the key from `filterOptions` based on the selected value
+  const selectedKey = Object.keys(filterOptions).find((key) => filterOptions[key] === filter);
 
   return (
     <div>
@@ -27,19 +38,17 @@ const Dashboard = () => {
         </div>
 
         {/* Filter Dropdown */}
-        <div className="flex items-center gap-2 w-full sm:w-auto md:mr-8 md:w-1/4">
+        <div className="flex items-center gap-2 w-full sm:w-auto mr-8 md:w-1/4">
           <label className="text-lg text-gray-600 font-semibold whitespace-nowrap">Filter By:</label>
           <select
             className="w-full sm:w-auto flex-grow rounded-md border border-gray-300 px-3 py-3 text-sm shadow-sm 
             focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+            value={selectedKey}
+            onChange={(e) => setFilter(filterOptions[e.target.value])}
           >
-            <option value="All" className="font-bold">All Time</option>
-            <option value="Office & Business Expenses">Last 7 Days</option>
-            <option value="Office & Business Expenses">Last 14 Days</option>
-            <option value="Office & Business Expenses">Last 1 Month</option>
-            <option value="Office & Business Expenses">Last 3 Months</option>
-            <option value="Office & Business Expenses">Last 6 Months</option>
-            <option value="Office & Business Expenses">Last 1 Year</option>
+            {Object.keys(filterOptions).map((key) => (
+              <option key={key} value={key}>{key}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -58,7 +67,7 @@ const Dashboard = () => {
             icon={<Receipt className="w-10 h-10 text-purple-600" />}
           />
           <DashboardCard
-            title={"06"}
+            title={totalCategories}
             description={"Total Categories"}
             icon={<PieChart className="w-10 h-10 text-green-600" />}
           />

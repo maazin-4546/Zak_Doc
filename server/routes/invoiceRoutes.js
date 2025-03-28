@@ -4,8 +4,6 @@ const {
     extractInvoice,
     updateInvoiceData,
     getInvoiceDataFromCategory,
-    getInvoiceDataById,
-    getCountOfSpecificCategory,
     getReceiptsByDateRange,
     getUserSpcificInvoice,
     deleteInvoiceData,
@@ -20,13 +18,10 @@ const upload = multer({ dest: "uploads/" });
 
 router.post("/extract", authMiddleware, upload.single("file"), extractInvoice);
 
-//? GET invoices based on category
-router.get("/api/user-invoices/category/:category", authMiddleware, getInvoiceDataFromCategory);
+// !--------------- Invoice Operations -----------------
 
-// GET invoice by id
-router.get("/api/invoices/:id", getInvoiceDataById);
-
-router.get("/api/invoices/category-count/:category", getCountOfSpecificCategory);
+// Get all invoices for a specific user
+router.get("/api/user-invoices", authMiddleware, getUserSpcificInvoice);
 
 // update the latest inserted data
 router.put("/api/invoices/:invoiceId", updateInvoiceData);
@@ -34,10 +29,14 @@ router.put("/api/invoices/:invoiceId", updateInvoiceData);
 // delete invoice
 router.delete("/api/delete-invoice/:invoiceId", authMiddleware, deleteInvoiceData);
 
-// Get all invoices for a specific user
-router.get("/api/user-invoices", authMiddleware, getUserSpcificInvoice);
+// !--------------- Filter API's -----------------
+
+// GET invoices based on category
+router.get("/api/user-invoices/category/:category", authMiddleware, getInvoiceDataFromCategory);
 
 router.get("/api/invoices/filter/by-date", authMiddleware, getReceiptsByDateRange);
+
+// !--------------- Dashboard -----------------
 
 router.get("/api/user-weekly-amounts", authMiddleware, getAmountWeeklySpending);
 

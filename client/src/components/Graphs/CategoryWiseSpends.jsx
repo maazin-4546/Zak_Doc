@@ -1,5 +1,4 @@
-import { useContext, useEffect, useState } from "react";
-import axios from "axios";
+import { useContext } from "react";
 import { PieChart, Pie, Tooltip, Cell, Legend, ResponsiveContainer } from "recharts";
 import NavbarSecond from "../Navbar/NavbarSecond";
 import { DashboardContext } from "../../Context/DashboardContext";
@@ -42,32 +41,35 @@ const CategoryWiseSpends = () => {
 
                 {/* Chart Container - Increased Width */}
                 <div className="flex flex-col items-center bg-white p-10 shadow-xl rounded-xl w-full max-w-5xl mx-auto">
-                    <ResponsiveContainer width="100%" height={500}>
-                        <PieChart>
-                            <Pie
-                                data={categoryData}
-                                cx="50%"
-                                cy="50%"
-                                outerRadius={150}
-                                dataKey="total"
-                                nameKey="category"
-                                labelLine={false}
-                            >
-                                {categoryData.map((entry, index) => (
-                                    <Cell
-                                        key={`cell-${index}`}
-                                        fill={COLORS[index % COLORS.length]}
-                                        stroke="white"
-                                        strokeWidth={2}
-                                        className="hover:scale-105 transition-transform duration-300"
-                                    />
-                                ))}
-                            </Pie>
-                            <Tooltip content={<CustomTooltip />} />
-                            <Legend verticalAlign="top" align="center" layout="vertical" />
-                        </PieChart>
-                    </ResponsiveContainer>
+                    <div className="w-full h-[500px] sm:h-[400px] xs:h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={categoryData}
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius="100%" 
+                                    dataKey="total"
+                                    nameKey="category"
+                                    labelLine={false}
+                                >
+                                    {categoryData.map((entry, index) => (
+                                        <Cell
+                                            key={`cell-${index}`}
+                                            fill={COLORS[index % COLORS.length]}
+                                            stroke="white"
+                                            strokeWidth={2}
+                                            className="hover:scale-105 transition-transform duration-300"
+                                        />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                                <Legend verticalAlign="top" align="center" layout="vertical" />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
+
             </div>
         </>
 

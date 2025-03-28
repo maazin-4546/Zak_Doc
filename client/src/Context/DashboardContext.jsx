@@ -13,6 +13,12 @@ export const DashboardContextProvider = ({ children }) => {
     const [categoryData, setCategoryData] = useState([]);
     const [totalSpending, setTotalSpending] = useState(0);
     const [weeklyData, setWeeklyData] = useState([]);
+    const [filter, setFilter] = useState("all");
+    const [weeklySpending, setWeeklySpending] = useState([]);
+    const [categorySpending, setCategorySpending] = useState([]);
+    const [invoiceCategoryCount, setInvoiceCategoryCount] = useState([]);
+    const [totalCategories, setTotalCategories] = useState(0);
+
 
 
     const token = localStorage.getItem('token');
@@ -21,8 +27,12 @@ export const DashboardContextProvider = ({ children }) => {
     useEffect(() => {
         const fetchCategoryWiseSpending = async () => {
             try {
-                const token = localStorage.getItem("token");
-                const response = await axios.get("http://localhost:5000/api/categorywise-spending", {
+                if (!token) {
+                    console.error("No token found. User is not authenticated.");
+                    return;
+                }
+
+                const response = await axios.get(`http://localhost:5000/api/categorywise-spending?filter=${filter}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -38,22 +48,26 @@ export const DashboardContextProvider = ({ children }) => {
         };
 
         fetchCategoryWiseSpending();
-    }, []);
+    }, [filter]);
 
 
     // * Receipt count based on category
     useEffect(() => {
         const fetchCategoryCount = async () => {
             try {
-                const response = await axios.get("http://localhost:5000/api/invoice-category-count", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                if (!token) {
+                    console.error("No token found. User is not authenticated.");
+                    return;
+                }
+
+                const response = await axios.get(`http://localhost:5000/api/invoice-category-count?filter=${filter}`, {
+                    headers: { Authorization: `Bearer ${token}` },
                 });
 
                 if (response.data.success) {
                     setCategoryCounts(response.data.data);
                     setTotalReceipts(response.data.totalReceipts);
+                    setTotalCategories(response.data.totalCategories); 
                 } else {
                     console.log("Failed to fetch data");
                 }
@@ -63,16 +77,20 @@ export const DashboardContextProvider = ({ children }) => {
         };
 
         fetchCategoryCount();
-    }, []);
+    }, [filter]);
+
 
 
     //* Total weekly spendings(Line Chart)
-    const fetchWeeklySpending = async () => {
+    const fetchWeeklySpending = async (filter) => {
         try {
-            const response = await axios.get("http://localhost:5000/api/user-weekly-amounts", {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
+            if (!token) {
+                console.error("No token found. User is not authenticated.");
+                return [];
+            }
+
+            const response = await axios.get(`http://localhost:5000/api/user-weekly-amounts?filter=${filter}`, {
+                headers: { Authorization: `Bearer ${token}` },
             });
 
             return response.data.success ? response.data.data : [];
@@ -84,16 +102,48 @@ export const DashboardContextProvider = ({ children }) => {
 
     useEffect(() => {
         const getData = async () => {
-            const data = await fetchWeeklySpending();
+            const data = await fetchWeeklySpending(filter);
             setWeeklyData(data);
         };
-
         getData();
-    }, []);
+    }, [filter]);
+
+
+    //! Main filter s
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const token = localStorage.getItem("token"); // Retrieve token from local storage
+
+                if (!token) {
+                    console.error("No token found. User is not authenticated.");
+                    return;
+                }
+
+                const headers = {
+                    Authorization: `Bearer ${token}`,
+                };
+
+                const [weeklyRes, categoryRes, invoiceRes] = await Promise.all([
+                    axios.get(`http://localhost:5000/api/user-weekly-amounts?filter=${filter}`, { headers }),
+                    axios.get(`http://localhost:5000/api/categorywise-spending?filter=${filter}`, { headers }),
+                    axios.get(`http://localhost:5000/api/invoice-category-count?filter=${filter}`, { headers })
+                ]);
+
+                setWeeklySpending(weeklyRes.data.data);
+                setCategorySpending(categoryRes.data.data);
+                setInvoiceCategoryCount(invoiceRes.data.data);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        };
+
+        fetchData();
+    }, [filter]);
 
 
     return (
-        <DashboardContext.Provider value={{ categoryCounts, totalReceipts, categoryData, totalSpending, weeklyData }}>
+        <DashboardContext.Provider value={{ categoryCounts, totalReceipts, categoryData, totalSpending, weeklyData, filter, setFilter, totalCategories }}>
             {children}
         </DashboardContext.Provider>
     )

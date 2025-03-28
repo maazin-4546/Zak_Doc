@@ -25,6 +25,8 @@ const extractInvoice = async (req, res) => {
     }
 };
 
+// !--------------- Invoice Operations -----------------
+
 const getUserSpcificInvoice = async (req, res) => {
     try {
         // Fetch invoices where userId matches the logged-in user
@@ -36,104 +38,6 @@ const getUserSpcificInvoice = async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 }
-
-const getInvoiceDataFromCategory = async (req, res) => {
-    try {
-        const { category } = req.params;
-        const userId = req.user._id;
-
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(400).json({ error: "Invalid user ID" });
-        }
-
-        const decodedCategory = decodeURIComponent(category);
-
-        // KEY FIX: Changed 'user' to 'userId' to match your schema
-        const invoices = await Invoice.find({
-            userId: userId,  // ← Changed from 'user' to 'userId'
-            category: decodedCategory
-        });
-
-        res.json({
-            success: true,
-            data: invoices  // Consistent response format with your other API
-        });
-    } catch (error) {
-        console.error("Error:", error);
-        res.status(500).json({
-            success: false,
-            error: "Server error",
-            details: error.message
-        });
-    }
-};
-
-const getInvoiceDataById = async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        // Validate if the ID exists
-        const invoice = await Invoice.findById(id);
-        if (!invoice) {
-            return res.status(404).json({ error: "Invoice not found" });
-        }
-
-        res.json(invoice);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-const getCountOfSpecificCategory = async (req, res) => {
-    try {
-        const { category } = req.params;
-
-        // Validate category from existing records
-        const existingCategories = await Invoice.distinct("category");
-        if (!existingCategories.includes(category)) {
-            return res.status(400).json({ error: "Invalid category" });
-        }
-
-        // Get count of the category from Categories table
-        const categoryData = await Category.findOne({ category });
-        const count = categoryData ? categoryData.count : 0;
-
-        res.json({ count });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-const getReceiptsByDateRange = async (req, res) => {
-    try {
-        const { startDate, endDate } = req.query;
-        const userId = req.user._id;
-
-        // Validate inputs
-        if (!startDate || !endDate) {
-            return res.status(400).json({
-                success: false,
-                message: "Both startDate and endDate are required"
-            });
-        }
-
-        const invoices = await Invoice.find({
-            userId: userId,
-            createdAt: {
-                $gte: new Date(startDate),
-                $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
-            }
-        });
-
-        res.json({ success: true, data: invoices });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Server error",
-            error: error.message
-        });
-    }
-};
 
 const updateInvoiceData = async (req, res) => {
     try {
@@ -220,11 +124,107 @@ const deleteInvoiceData = async (req, res) => {
     }
 };
 
+// !--------------- Filter API's -----------------
+
+const getInvoiceDataFromCategory = async (req, res) => {
+    try {
+        const { category } = req.params;
+        const userId = req.user._id;
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ error: "Invalid user ID" });
+        }
+
+        const decodedCategory = decodeURIComponent(category);
+
+        // KEY FIX: Changed 'user' to 'userId' to match your schema
+        const invoices = await Invoice.find({
+            userId: userId,  // ← Changed from 'user' to 'userId'
+            category: decodedCategory
+        });
+
+        res.json({
+            success: true,
+            data: invoices  // Consistent response format with your other API
+        });
+    } catch (error) {
+        console.error("Error:", error);
+        res.status(500).json({
+            success: false,
+            error: "Server error",
+            details: error.message
+        });
+    }
+};
+
+const getReceiptsByDateRange = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        const userId = req.user._id;
+
+        // Validate inputs
+        if (!startDate || !endDate) {
+            return res.status(400).json({
+                success: false,
+                message: "Both startDate and endDate are required"
+            });
+        }
+
+        const invoices = await Invoice.find({
+            userId: userId,
+            createdAt: {
+                $gte: new Date(startDate),
+                $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
+            }
+        });
+
+        res.json({ success: true, data: invoices });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
+
+// !--------------- Dashboard -----------------
+
 // API to get total weekly spending
 const getAmountWeeklySpending = async (req, res) => {
     try {
-        // Fetch user-specific invoices
-        const invoices = await Invoice.find({ userId: req.user._id });
+        const { filter } = req.query; // Extract filter parameter
+        const userId = req.user._id;
+
+        let startDate = moment().startOf("day"); // Default: Today
+        switch (filter) {
+            case "7d":
+                startDate = moment().subtract(7, "days").startOf("day");
+                break;
+            case "14d":
+                startDate = moment().subtract(14, "days").startOf("day");
+                break;
+            case "1m":
+                startDate = moment().subtract(1, "months").startOf("day");
+                break;
+            case "3m":
+                startDate = moment().subtract(3, "months").startOf("day");
+                break;
+            case "6m":
+                startDate = moment().subtract(6, "months").startOf("day");
+                break;
+            case "1y":
+                startDate = moment().subtract(1, "years").startOf("day");
+                break;
+            default:
+                startDate = moment("2000-01-01"); // Fetch all data
+        }
+
+        // Fetch invoices for the selected time range
+        const invoices = await Invoice.find({
+            userId,
+            createdAt: { $gte: startDate.toDate() }
+        });
 
         // Process data for weekly aggregation
         const weeklyData = {};
@@ -252,17 +252,47 @@ const getAmountWeeklySpending = async (req, res) => {
         console.error("Error fetching weekly amounts:", error.message);
         res.status(500).json({ error: "Internal server error" });
     }
-}
+};
 
 // API to get categorywise spending
 const getCategoryWiseSpending = async (req, res) => {
     try {
-        
-        const invoices = await Invoice.find({ userId: req.user._id });
+        const { filter } = req.query; // Extract filter parameter
+        const userId = req.user._id;
+
+        let startDate = moment().startOf("day"); // Default: Today
+        switch (filter) {
+            case "7d":
+                startDate = moment().subtract(7, "days").startOf("day");
+                break;
+            case "14d":
+                startDate = moment().subtract(14, "days").startOf("day");
+                break;
+            case "1m":
+                startDate = moment().subtract(1, "months").startOf("day");
+                break;
+            case "3m":
+                startDate = moment().subtract(3, "months").startOf("day");
+                break;
+            case "6m":
+                startDate = moment().subtract(6, "months").startOf("day");
+                break;
+            case "1y":
+                startDate = moment().subtract(1, "years").startOf("day");
+                break;
+            default:
+                startDate = moment("2000-01-01"); // Fetch all data
+        }
+
+        // Fetch invoices within the selected date range
+        const invoices = await Invoice.find({
+            userId,
+            createdAt: { $gte: startDate.toDate() }
+        });
 
         // Object to store category-wise spending
         const categorySpending = {};
-        let totalSpending = 0; 
+        let totalSpending = 0;
 
         invoices.forEach(invoice => {
             const category = invoice.category;
@@ -274,7 +304,7 @@ const getCategoryWiseSpending = async (req, res) => {
                 categorySpending[category] = 0;
             }
             categorySpending[category] += totalAmount;
-            totalSpending += totalAmount; 
+            totalSpending += totalAmount;
         });
 
         // Convert object into array for frontend consumption
@@ -282,11 +312,11 @@ const getCategoryWiseSpending = async (req, res) => {
             category,
             total: categorySpending[category]
         }));
-        
+
         res.json({
             success: true,
             data: result,
-            totalSpending 
+            totalSpending
         });
     } catch (error) {
         console.error("Error fetching category spending:", error.message);
@@ -297,9 +327,40 @@ const getCategoryWiseSpending = async (req, res) => {
 // CategoryWise count the receipt
 const getInvoiceCategoryCount = async (req, res) => {
     try {
+        const { filter } = req.query; // Extract filter parameter
+        const userId = req.user._id;
+
+        let startDate = moment().startOf("day"); // Default: Today
+        switch (filter) {
+            case "7d":
+                startDate = moment().subtract(7, "days").startOf("day");
+                break;
+            case "14d":
+                startDate = moment().subtract(14, "days").startOf("day");
+                break;
+            case "1m":
+                startDate = moment().subtract(1, "months").startOf("day");
+                break;
+            case "3m":
+                startDate = moment().subtract(3, "months").startOf("day");
+                break;
+            case "6m":
+                startDate = moment().subtract(6, "months").startOf("day");
+                break;
+            case "1y":
+                startDate = moment().subtract(1, "years").startOf("day");
+                break;
+            default:
+                startDate = moment("2000-01-01"); // Fetch all data
+        }
+
+        // Fetch invoices and filter based on selected time range
         const categoryCount = await Invoice.aggregate([
             {
-                $match: { userId: req.user._id }
+                $match: {
+                    userId: userId,
+                    createdAt: { $gte: startDate.toDate() }
+                }
             },
             {
                 $group: {
@@ -309,9 +370,13 @@ const getInvoiceCategoryCount = async (req, res) => {
             }
         ]);
 
+        // Calculate total receipts
         const totalReceipts = categoryCount.reduce((sum, category) => sum + category.count, 0);
 
-        res.json({ success: true, data: categoryCount, totalReceipts });
+        // Get the total number of unique categories
+        const totalCategories = categoryCount.length;
+
+        res.json({ success: true, data: categoryCount, totalReceipts, totalCategories });
     } catch (error) {
         console.error("Error fetching category count:", error.message);
         res.status(500).json({ error: "Internal server error" });
@@ -319,12 +384,11 @@ const getInvoiceCategoryCount = async (req, res) => {
 };
 
 
+
 module.exports = {
-    extractInvoice,    
+    extractInvoice,
     updateInvoiceData,
     getInvoiceDataFromCategory,
-    getInvoiceDataById,
-    getCountOfSpecificCategory,
     getReceiptsByDateRange,
     getUserSpcificInvoice,
     deleteInvoiceData,

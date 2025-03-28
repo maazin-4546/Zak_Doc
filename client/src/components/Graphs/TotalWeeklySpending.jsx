@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react'
-import axios from "axios";
+import React, { useContext } from 'react'
 import {
     LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
@@ -26,33 +25,36 @@ const TotalWeeklySpending = () => {
 
                 {/* Chart Container */}
                 <div className="bg-white shadow-lg rounded-xl p-4 sm:p-6 border border-gray-200">
-                    <ResponsiveContainer width="100%" height={350} sm:height={450}>
-                        <LineChart data={weeklyData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#ddd" />
-                            <XAxis dataKey="weekStart" stroke="#4A5568" />
-                            <YAxis stroke="#4A5568" />
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: "rgba(0, 0, 0, 0.8)",
-                                    color: "#fff",
-                                    borderRadius: "8px",
-                                    padding: "12px",
-                                    border: "1px solid #6366F1",
-                                }}
-                                labelStyle={{ fontWeight: "bold" }}
-                                itemStyle={{ color: "#A5B4FC" }}
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey="total"
-                                stroke="#6366F1"
-                                strokeWidth={3}
-                                dot={{ r: 6, fill: "#6366F1", stroke: "#fff", strokeWidth: 2 }}
-                                activeDot={{ r: 10, fill: "#ffffff", stroke: "#6366F1", strokeWidth: 3 }}
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
+                    <div className="w-full h-[350px] sm:h-[450px] xs:h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={weeklyData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#ddd" />
+                                <XAxis dataKey="weekStart" stroke="#4A5568" />
+                                <YAxis stroke="#4A5568" />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: "rgba(0, 0, 0, 0.8)",
+                                        color: "#fff",
+                                        borderRadius: "8px",
+                                        padding: "12px",
+                                        border: "1px solid #6366F1",
+                                    }}
+                                    labelStyle={{ fontWeight: "bold" }}
+                                    itemStyle={{ color: "#A5B4FC" }}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="total"
+                                    stroke="#6366F1"
+                                    strokeWidth={3}
+                                    dot={{ r: 6, fill: "#6366F1", stroke: "#fff", strokeWidth: 2 }}
+                                    activeDot={{ r: 10, fill: "#ffffff", stroke: "#6366F1", strokeWidth: 3 }}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
+
             </div>
         </>
 
