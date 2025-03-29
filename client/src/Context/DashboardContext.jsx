@@ -19,19 +19,17 @@ export const DashboardContextProvider = ({ children }) => {
     const [invoiceCategoryCount, setInvoiceCategoryCount] = useState([]);
     const [totalCategories, setTotalCategories] = useState(0);
 
-
-
     const token = localStorage.getItem('token');
 
     //* category-wise spending and total amount
     useEffect(() => {
+        if (!token) {
+            console.log("User is logged out, skipping fetchCategoryWiseSpending.");
+            return;
+        }
+
         const fetchCategoryWiseSpending = async () => {
             try {
-                if (!token) {
-                    console.error("No token found. User is not authenticated.");
-                    return;
-                }
-
                 const response = await axios.get(`http://localhost:5000/api/categorywise-spending?filter=${filter}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
@@ -48,18 +46,18 @@ export const DashboardContextProvider = ({ children }) => {
         };
 
         fetchCategoryWiseSpending();
-    }, [filter]);
+    }, [filter, token]);
 
 
     // * Receipt count based on category
     useEffect(() => {
+        if (!token) {
+            console.log("User is logged out, skipping fetchCategoryCount.");
+            return;
+        }
+
         const fetchCategoryCount = async () => {
             try {
-                if (!token) {
-                    console.error("No token found. User is not authenticated.");
-                    return;
-                }
-
                 const response = await axios.get(`http://localhost:5000/api/invoice-category-count?filter=${filter}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
@@ -67,7 +65,7 @@ export const DashboardContextProvider = ({ children }) => {
                 if (response.data.success) {
                     setCategoryCounts(response.data.data);
                     setTotalReceipts(response.data.totalReceipts);
-                    setTotalCategories(response.data.totalCategories); 
+                    setTotalCategories(response.data.totalCategories);
                 } else {
                     console.log("Failed to fetch data");
                 }
@@ -77,18 +75,17 @@ export const DashboardContextProvider = ({ children }) => {
         };
 
         fetchCategoryCount();
-    }, [filter]);
-
+    }, [filter, token]);
 
 
     //* Total weekly spendings(Line Chart)
     const fetchWeeklySpending = async (filter) => {
-        try {
-            if (!token) {
-                console.error("No token found. User is not authenticated.");
-                return [];
-            }
+        if (!token) {
+            console.log("User is logged out, skipping fetchWeeklySpending.");
+            return [];
+        }
 
+        try {
             const response = await axios.get(`http://localhost:5000/api/user-weekly-amounts?filter=${filter}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -100,26 +97,31 @@ export const DashboardContextProvider = ({ children }) => {
         }
     };
 
+
     useEffect(() => {
+        if (!token) {
+            console.log("User is logged out, skipping weekly data fetch.");
+            return;
+        }
+
         const getData = async () => {
             const data = await fetchWeeklySpending(filter);
             setWeeklyData(data);
         };
+
         getData();
-    }, [filter]);
+    }, [token, filter]); 
 
 
     //! Main filter s
     useEffect(() => {
+        if (!token) {
+            console.log("User is logged out, skipping fetchData.");
+            return;
+        }
+
         const fetchData = async () => {
             try {
-                const token = localStorage.getItem("token"); // Retrieve token from local storage
-
-                if (!token) {
-                    console.error("No token found. User is not authenticated.");
-                    return;
-                }
-
                 const headers = {
                     Authorization: `Bearer ${token}`,
                 };
@@ -139,7 +141,8 @@ export const DashboardContextProvider = ({ children }) => {
         };
 
         fetchData();
-    }, [filter]);
+    }, [token, filter]); 
+
 
 
     return (

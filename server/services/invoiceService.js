@@ -3,7 +3,6 @@ const fs = require("fs");
 const { spawn } = require("child_process");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const Invoice = require("../models/Invoice");
-const Category = require("../models/Category");
 const { imageToBase64 } = require("../utils/fileUtils");
 
 const API_KEY = process.env.GOOGLE_API_KEY;
@@ -66,21 +65,6 @@ const processFile = async (req) => {
     });
 
     await invoice.save();
-
-    // Update or Insert Category with userId
-    const existingCategory = await Category.findOne({ userId, category: extractedData.category });
-
-    if (existingCategory) {
-      existingCategory.count += 1;
-      await existingCategory.save();
-    } else {
-      const newCategory = new Category({
-        userId,  // Store userId to differentiate users' categories
-        category: extractedData.category,
-        count: 1,
-      });
-      await newCategory.save();
-    }
 
     return invoice;
 

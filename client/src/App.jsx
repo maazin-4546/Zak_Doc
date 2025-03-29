@@ -1,11 +1,10 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import RegisterForm from "./components/Auth/RegisterForm";
 import LoginForm from "./components/Auth/LoginForm";
 import ProtectedRoute from "./middleware/ProtectedRoute";
 import ForgotPassword from "./components/Auth/ForgotPasswordForm";
 import ResetPassword from "./components/Auth/ResetPasswordForm";
-import FileUpload from "./components/FileUpload";
 import Navbar from "./components/Navbar/Navbar";
 import Sidebar from "./components/Sidebar/Sidebar";
 import UserProfileForm from "./components/UserProfileForm";
@@ -13,6 +12,8 @@ import SettingsPage from "./components/Settings";
 import ChangePasswordForm from "./components/Auth/ChangePasswordForm";
 import Dashboard from "./components/Dashboard/Dashboard";
 import InvoiceTable from "./components/InvoiceTable/InvoiceTable";
+import OnlyIfNotLoggedIn from "./middleware/OnlyIfNotLoggedIn";
+import FileUpload from "./components/FileUpload";
 
 const App = () => {
 
@@ -45,20 +46,25 @@ const App = () => {
 
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto bg-gradient-to-br from-indigo-50 to-white">
+
           <Routes>
             {/* Protected Routes */}
-            <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
-            <Route path="/upload-invoice" element={<ProtectedRoute element={<FileUpload />} />} />
-            <Route path="/invoice-table" element={<ProtectedRoute element={<InvoiceTable />} />} />
-            <Route path="/user-profile" element={<ProtectedRoute element={<UserProfileForm />} />} />
-            <Route path="/settings" element={<ProtectedRoute element={<SettingsPage />} />} />
-            <Route path="/change-password" element={<ProtectedRoute element={<ChangePasswordForm />} />} />
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/upload-invoice" element={<FileUpload />} />
+              <Route path="/invoice-table" element={<InvoiceTable />} />
+              <Route path="/user-profile" element={<UserProfileForm />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/change-password" element={<ChangePasswordForm />} />              
+            </Route>
 
             {/* Public Routes */}
-            <Route path="/login" element={!token ? <LoginForm /> : <Navigate to="/dashboard" replace />} />
-            <Route path="/register" element={!token ? <RegisterForm /> : <Navigate to="/dashboard" replace />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route element={<OnlyIfNotLoggedIn />}>
+              <Route path="/login" element={<LoginForm />} />
+              <Route path="/register" element={<RegisterForm />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />              
+            </Route>
 
           </Routes>
         </div>

@@ -1,6 +1,5 @@
 const invoiceService = require("../services/invoiceService");
 const Invoice = require("../models/Invoice");
-const Category = require("../models/Category");
 const mongoose = require("mongoose");
 const moment = require("moment");
 
@@ -41,7 +40,7 @@ const getUserSpcificInvoice = async (req, res) => {
 
 const updateInvoiceData = async (req, res) => {
     try {
-        const { products, category, ...updatedFields } = req.body;
+        const { products, ...updatedFields } = req.body;
         const { invoiceId } = req.params;
 
         if (!invoiceId) return res.status(400).json({ error: "Invoice ID is required" });
@@ -49,7 +48,6 @@ const updateInvoiceData = async (req, res) => {
         const invoice = await Invoice.findById(invoiceId);
         if (!invoice) return res.status(404).json({ error: "Invoice not found" });
 
-        const oldCategory = invoice.category; // Store old category before update
         Object.assign(invoice, updatedFields);
 
         if (Array.isArray(products)) {
@@ -58,26 +56,6 @@ const updateInvoiceData = async (req, res) => {
                 if (product) Object.assign(product, productUpdates);
             });
             invoice.markModified("products");
-        }
-
-        if (category && category !== oldCategory) {
-            // ✅ Decrease count of old category
-            await Category.findOneAndUpdate(
-                { userId: invoice.userId, category: oldCategory },
-                { $inc: { count: -1 } }
-            );
-
-            // ✅ Increase count of new category (or create if it doesn't exist)
-            const existingCategory = await Category.findOne({ userId: invoice.userId, category });
-            if (existingCategory) {
-                existingCategory.count += 1;
-                await existingCategory.save();
-            } else {
-                const newCategory = new Category({ userId: invoice.userId, category, count: 1 });
-                await newCategory.save();
-            }
-
-            invoice.category = category;
         }
 
         await invoice.save();
@@ -89,32 +67,18 @@ const updateInvoiceData = async (req, res) => {
     }
 };
 
+
 const deleteInvoiceData = async (req, res) => {
     try {
         const { invoiceId } = req.params;
-        const userId = req.user.id; // Get the logged-in user's ID
 
         if (!invoiceId) return res.status(400).json({ error: "Invoice ID is required" });
 
         const invoice = await Invoice.findById(invoiceId);
         if (!invoice) return res.status(404).json({ error: "Invoice not found" });
 
-        const categoryName = invoice.category;
-
         // Delete the invoice
         await Invoice.findByIdAndDelete(invoiceId);
-
-        // Update the category count for the user
-        const category = await Category.findOne({ userId, category: categoryName });
-
-        if (category) {
-            category.count -= 1;
-            if (category.count <= 0) {
-                await Category.findByIdAndDelete(category._id); // Remove category if count reaches 0
-            } else {
-                await category.save();
-            }
-        }
 
         res.json({ success: true, message: "Invoice deleted successfully" });
 

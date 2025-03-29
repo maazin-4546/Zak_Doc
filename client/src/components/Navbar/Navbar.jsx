@@ -1,14 +1,13 @@
 import { useState, useEffect, useContext, useRef } from "react";
 import { ChevronDown, Menu, Search, Globe, User, Settings, LogOut, Check } from "lucide-react";
-import { Link, useNavigate } from 'react-router-dom';
-import { toast } from "react-toastify";
+import { Link } from 'react-router-dom';
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
 import { NavbarContext } from "../../Context/NavbarContext";
 
 export default function Navbar({ setIsSidebarOpen }) {
 
-    const { userName, userEmail } = useContext(NavbarContext)
+    const { userName, userEmail, setIsLoggedIn, handleLogout } = useContext(NavbarContext)
 
     const languageRef = useRef(null);
     const profileRef = useRef(null);
@@ -16,9 +15,7 @@ export default function Navbar({ setIsSidebarOpen }) {
     const [menuOpen, setMenuOpen] = useState(false);
     const [languageOpen, setLanguageOpen] = useState(false);
     const [selectedLanguage, setSelectedLanguage] = useState("English");
-    const navigate = useNavigate()
-
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [selectedLanguageCode, setSelectedLanguageCode] = useState("us");
 
 
 
@@ -38,31 +35,23 @@ export default function Navbar({ setIsSidebarOpen }) {
         };
     }, []);
 
+    const handleProfileClick = (e) => {
+        e.stopPropagation();
+        setMenuOpen((prev) => !prev);
+    };
+
+    const handleLanguageClick = (e) => {
+        e.stopPropagation();
+        setLanguageOpen((prev) => !prev);
+    };
+
+
+
     // Check login status on mount
     useEffect(() => {
         const token = localStorage.getItem("token");
         setIsLoggedIn(!!token);
     }, []);
-
-    const handleLogout = async () => {
-        try {
-            await fetch("http://localhost:5000/user/logout", {
-                method: "POST",
-                credentials: "include",
-            });
-
-            localStorage.removeItem("token");
-            setIsLoggedIn(false);
-            toast.success("Logged out successfully");
-
-            navigate("/login");  // Redirect first
-            setTimeout(() => window.location.reload(), 500); // Reload after redirect
-        } catch (error) {
-            toast.error("Something went wrong");
-            console.error("Logout failed", error);
-        }
-    };
-
 
     const languages = [
         { code: "us", name: "English" },
@@ -103,15 +92,21 @@ export default function Navbar({ setIsSidebarOpen }) {
                     <div className="relative">
                         <button
                             className="cursor-pointer flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-md text-gray-700 hover:bg-gray-200 transition shadow-sm border border-gray-300"
-                            onClick={() => setLanguageOpen(!languageOpen)}
+                            onClick={handleLanguageClick}
+                            ref={languageRef} // Track the language button
                         >
-                            <Globe size={18} />
+                            {/* Show the selected language flag */}
+                            <img
+                                src={`https://flagcdn.com/w40/${selectedLanguageCode}.png`}
+                                alt={selectedLanguage}
+                                className="w-5 h-4 rounded"
+                            />
                             <span className="hidden md:inline text-sm font-medium">{selectedLanguage}</span>
                             <ChevronDown size={16} className={`transition-transform duration-300 ${languageOpen ? "rotate-180" : "rotate-0"}`} />
                         </button>
 
                         {languageOpen && (
-                            <div ref={languageRef} className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 shadow-lg rounded-lg overflow-hidden z-50">
+                            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 shadow-lg rounded-lg overflow-hidden z-50">
                                 <ul className="py-2 text-gray-700">
                                     {languages.map((lang) => (
                                         <li
@@ -119,6 +114,7 @@ export default function Navbar({ setIsSidebarOpen }) {
                                             className="px-4 py-2 flex justify-between items-center hover:bg-gray-100 cursor-pointer"
                                             onClick={() => {
                                                 setSelectedLanguage(lang.name);
+                                                setSelectedLanguageCode(lang.code); // Save the language code for flag
                                                 setLanguageOpen(false);
                                             }}
                                         >
@@ -135,16 +131,14 @@ export default function Navbar({ setIsSidebarOpen }) {
                     </div>
 
                     {/* Profile Section */}
-                    <div className="relative">
+                    <div className="relative" ref={profileRef}>
                         <div
                             className="flex items-center space-x-3 px-4 py-2 cursor-pointer"
-                            onClick={() => setMenuOpen(!menuOpen)}
+                            onClick={handleProfileClick}
                         >
-                            <img
-                                src="https://randomuser.me/api/portraits/men/45.jpg"
-                                alt="User Avatar"
-                                className="w-10 h-10 rounded-full border border-gray-300 shadow-sm"
-                            />
+
+                            <User size={40} className="text-gray-500 bg-gray-200 rounded-full p-2" />
+
                             <div className="leading-4 hidden md:block">
                                 <h4 className="font-semibold">{userName}</h4>
                                 <span className="text-xs text-gray-600">{userEmail}</span>
@@ -155,8 +149,9 @@ export default function Navbar({ setIsSidebarOpen }) {
                             />
                         </div>
 
+                        {/* Profile Dropdown */}
                         {menuOpen && (
-                            <div ref={profileRef} className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 shadow-lg rounded-lg overflow-hidden z-50">
+                            <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 shadow-lg rounded-lg overflow-hidden z-50">
                                 <ul className="py-2 text-gray-700">
                                     <Link to="/user-profile" className="px-4 py-2 flex items-center space-x-2 hover:bg-gray-100 cursor-pointer">
                                         <User size={18} /> <span>Profile</span>
@@ -171,6 +166,7 @@ export default function Navbar({ setIsSidebarOpen }) {
                             </div>
                         )}
                     </div>
+
                 </div>
             </div>
         </header>

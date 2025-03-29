@@ -1,20 +1,24 @@
-import axios from 'axios';
 import { createContext } from 'react'
 import { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 
 
 export const NavbarContext = createContext()
 
 export const NavbarContextProvider = ({ children }) => {
 
-    //! Navbar
+    const navigate = useNavigate()
+
     const [userName, setUserName] = useState("");
     const [userEmail, setUserEmail] = useState("");
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+    const token = localStorage.getItem("token");
+
+    // Extracting name and email to display on navbar
     useEffect(() => {
-        const token = localStorage.getItem("token");
-
         if (token) {
             try {
                 // Decode JWT token payload
@@ -49,8 +53,27 @@ export const NavbarContextProvider = ({ children }) => {
         }
     }, []);
 
+    // Logout Function
+    const handleLogout = async () => {
+        try {
+            await fetch("http://localhost:5000/user/logout", {
+                method: "POST",
+                credentials: "include",
+            });
+
+            localStorage.removeItem("token");
+            setIsLoggedIn(false);
+            toast.success("Logged out successfully");
+
+            navigate("/login");              
+        } catch (error) {
+            toast.error("Something went wrong");
+            console.error("Logout failed", error);
+        }
+    };
+
     return (
-        <NavbarContext.Provider value={{ userName, userEmail }}>
+        <NavbarContext.Provider value={{ userName, userEmail, setIsLoggedIn, handleLogout }}>
             {children}
         </NavbarContext.Provider>
     )

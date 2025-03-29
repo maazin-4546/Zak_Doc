@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Settings, User, CreditCard, Plug, Phone, Globe, Lock, LogOut, ChevronRight } from "lucide-react";
 import NavbarSecond from "./Navbar/NavbarSecond";
+import { NavbarContext } from "../Context/NavbarContext";
 
 const settingsOptions = [
     {
@@ -50,29 +51,40 @@ const settingsOptions = [
 
 export default function SettingsPage() {
 
+    const { handleLogout } = useContext(NavbarContext)
+
     return (
         <>
-            <NavbarSecond title={"Settings"} path={" / Settings"} />            
+            <NavbarSecond title={"Settings"} path={" / Settings"} />
             <div className="min-h-screen overflow-y-auto">
                 <div className="p-6">
                     <div className="max-w-4xl mx-auto space-y-6">
                         {settingsOptions.map((option, index) => (
-                            <Link
+                            <div
                                 key={index}
-                                to={option.path}
-                                className="bg-white w-full p-6 rounded-2xl shadow hover:shadow-md transition border border-gray-200 flex items-center justify-between cursor-pointer"
+                                onClick={() => {
+                                    if (option.title === "Logout") {
+                                        handleLogout(); // Call logout function
+                                    }
+                                }}
                             >
-                                <div>
-                                    <div className="flex items-center gap-4 mb-2">
-                                        {option.icon}
-                                        <h2 className="text-lg font-semibold">{option.title}</h2>
+                                <Link
+                                    to={option.title === "Logout" ? "#" : option.path} // Prevent navigation for logout
+                                    className="bg-white w-full p-6 rounded-2xl shadow hover:shadow-md transition border border-gray-200 flex items-center justify-between cursor-pointer"
+                                >
+                                    <div>
+                                        <div className="flex items-center gap-4 mb-2">
+                                            {option.icon}
+                                            <h2 className="text-lg font-semibold">{option.title}</h2>
+                                        </div>
+                                        <p className="text-gray-600 text-sm">{option.description}</p>
                                     </div>
-                                    <p className="text-gray-600 text-sm">{option.description}</p>
-                                </div>
-                                <ChevronRight className="w-5 h-5 text-gray-400" />
-                            </Link>
+                                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                                </Link>
+                            </div>
                         ))}
                     </div>
+
                 </div>
             </div>
         </>

@@ -42,7 +42,7 @@ const Dashboard = () => {
           <label className="text-lg text-gray-600 font-semibold whitespace-nowrap">Filter By:</label>
           <select
             className="w-full sm:w-auto flex-grow rounded-md border border-gray-300 px-3 py-3 text-sm shadow-sm 
-            focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+            focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             value={selectedKey}
             onChange={(e) => setFilter(filterOptions[e.target.value])}
           >
@@ -80,14 +80,15 @@ const Dashboard = () => {
           <TotalWeeklySpending />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          <div className="p-2 rounded-lg">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8 lg:gap-10 w-full max-w-7xl mx-auto">
+          <div className="p-4 sm:p-6 md:p-8  rounded-xl">
             <CategoryWiseSpends />
           </div>
-          <div className="p-2 rounded-lg">
+          <div className="p-4 sm:p-6 md:p-8 rounded-xl">
             <CategoryCount />
           </div>
         </div>
+
       </div>
     </div>
 

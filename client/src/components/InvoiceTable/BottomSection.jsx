@@ -3,7 +3,7 @@ import { InvoiceTableContext } from '../../Context/InvoiceTableContext'
 
 const BottomSection = () => {
 
-    const { isOpen, setIsOpen, jsonData, setJsonData, invoices, handleCategoryChange, fetchFilteredInvoicesByDate, displayedRows, totalPages, startRow, handlePageChange, handleRowsPerPageChange, handleExport, tableRef, deleteInvoice, selectedCategory, searchInput, setSearchInput, rowsPerPage, currentPage, startDate, setStartDate, endDate, setEndDate } = useContext(InvoiceTableContext)
+    const { invoices, totalPages, startRow, handlePageChange, handleRowsPerPageChange, rowsPerPage, currentPage, } = useContext(InvoiceTableContext)
 
     return (
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 px-2 my-6">
@@ -14,7 +14,7 @@ const BottomSection = () => {
                 <select
                     value={rowsPerPage}
                     onChange={handleRowsPerPageChange}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                 >
                     <option value={10}>10</option>
                     <option value={25}>25</option>
@@ -40,7 +40,7 @@ const BottomSection = () => {
                             disabled={currentPage === 1}
                             className={`px-3 py-1.5 ${currentPage === 1
                                 ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                : "text-gray-600 hover:bg-gray-100"
+                                : "text-gray-600 hover:bg-gray-100 cursor-pointer"
                                 }`}
                         >
                             Previous
@@ -92,7 +92,7 @@ const BottomSection = () => {
                             <li key={index}>
                                 <button
                                     onClick={() => handlePageChange(index + 1)}
-                                    className={`px-3 py-1.5 ${currentPage === index + 1 ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-100"
+                                    className={`px-3 py-1.5 cursor-pointer ${currentPage === index + 1 ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-100"
                                         }`}
                                 >
                                     {index + 1}
@@ -107,7 +107,7 @@ const BottomSection = () => {
                             disabled={currentPage === totalPages}
                             className={`px-3 py-1.5 ${currentPage === totalPages
                                 ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                : "text-gray-600 hover:bg-gray-100"
+                                : "text-gray-600 hover:bg-gray-100 cursor-pointer"
                                 }`}
                         >
                             Next

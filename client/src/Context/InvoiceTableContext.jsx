@@ -30,38 +30,38 @@ export const InvoiceTableContextProvider = ({ children }) => {
 
     //* API to get user specific data
     const fetchData = async (category = 'All') => {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            console.log("No token found in localStorage. Skipping fetchData.");
+            setInvoices([]); 
+            return;
+        }
+
         try {
-            const token = localStorage.getItem("token");
-
-            if (!token) {
-                console.warn("No token found in localStorage");
-                return;
-            }
-
             const config = {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             };
 
-            // Use the correct endpoint structure based on your routes
             let url = "http://localhost:5000/api/user-invoices";
             if (category !== 'All') {
                 url = `http://localhost:5000/api/user-invoices/category/${encodeURIComponent(category)}`;
             }
 
             const response = await axios.get(url, config);
-
             setInvoices(response.data.data || response.data);
         } catch (error) {
             console.error("Error fetching invoice data:", error.response?.data || error.message);
-            setInvoices([]);
+            setInvoices([]); // Clear invoices on error
         }
     };
 
     useEffect(() => {
         fetchData();
     }, []);
+
 
     const handleCategoryChange = (e) => {
         const category = e.target.value;
@@ -203,7 +203,7 @@ export const InvoiceTableContextProvider = ({ children }) => {
 
     const exportToExcel = () => {
         if (!tableRef.current) return;
-        
+
         const workbook = XLSX.utils.book_new();
         const worksheet = XLSX.utils.aoa_to_sheet([]);
 
@@ -222,7 +222,7 @@ export const InvoiceTableContextProvider = ({ children }) => {
             "Total",
         ];
         XLSX.utils.sheet_add_aoa(worksheet, [headers], { origin: "A1" });
-    
+
         const tableRows = Array.from(tableRef.current.querySelectorAll("tbody tr")).map((row) => {
             const cells = row.querySelectorAll("td");
 
@@ -232,10 +232,10 @@ export const InvoiceTableContextProvider = ({ children }) => {
             const unitAmounts = [];
 
             // Ensure correct column indexing
-            const productListItems = cells[5]?.querySelectorAll("li"); 
+            const productListItems = cells[5]?.querySelectorAll("li");
             productListItems?.forEach((li, idx) => {
                 products.push(li.textContent.trim());
-                
+
                 quantities.push(cells[7]?.querySelectorAll("div")[idx]?.textContent.trim() || "0");
                 unitAmounts.push(cells[8]?.querySelectorAll("div")[idx]?.textContent.trim() || "₹0");
             });
@@ -255,9 +255,9 @@ export const InvoiceTableContextProvider = ({ children }) => {
             ];
         });
 
-        
+
         XLSX.utils.sheet_add_aoa(worksheet, tableRows, { origin: "A2" });
-        
+
         worksheet["!cols"] = [
             { wch: 15 },
             { wch: 15 },

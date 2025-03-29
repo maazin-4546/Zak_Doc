@@ -2,7 +2,6 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 
-
 const UpdateInvoiceModal = ({ jsonData, setJsonData, isOpen, onClose }) => {
 
     const handleSubmit = async (e) => {
@@ -202,8 +201,6 @@ const UpdateInvoiceModal = ({ jsonData, setJsonData, isOpen, onClose }) => {
                 </div>
             </div>
         </div>
-
-
     );
 };
 
