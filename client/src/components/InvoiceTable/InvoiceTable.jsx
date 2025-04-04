@@ -5,7 +5,7 @@ import NavbarSecond from "../Navbar/NavbarSecond";
 import { Pencil, Trash2 } from "lucide-react";
 import DeleteConfirmationModal from "../Modals/DeleteConfirmationModal";
 import "react-toastify/dist/ReactToastify.css";
-import { ToastContainer } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import UpdateInvoiceModal from "../Modals/UpdateModal";
 import "react-datepicker/dist/react-datepicker.css";
 import { InvoiceTableContext } from "../../Context/InvoiceTableContext";
@@ -14,9 +14,46 @@ import BottomSection from "./BottomSection";
 
 const InvoiceTable = () => {
 
-    const { isOpen, setIsOpen, jsonData, setJsonData,  displayedRows,  tableRef, deleteInvoice} = useContext(InvoiceTableContext)
+    const { isOpen, setIsOpen, jsonData, setJsonData, displayedRows, tableRef, deleteInvoice } = useContext(InvoiceTableContext)
 
     const [openModal, setOpenModal] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    const handleSyncToZoho = async () => {
+        setIsSyncing(true);
+        try {
+            for (const invoice of displayedRows) {
+                const payload = {
+                    invoice_number: invoice.invoice_number,
+                    date: invoice.date,
+                    company_name: invoice.company_name,
+                    vendor_name: invoice.vendor_name,
+                    tax_amount: invoice.tax_amount,
+                    total: invoice.total,
+                    products: invoice.products?.map((product) => ({
+                        product_name: product.product_name,
+                        quantity: product.quantity,
+                        unit_amount: product.unit_amount,
+                    })),
+                    category: invoice.category,
+                };
+
+                await fetch("http://localhost:5000/zoho/add-invoices", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(payload),
+                });
+            }
+
+            toast.success("Invoices synced successfully!");
+        } catch (err) {
+            toast.error("Sync failed. Check console.");
+        } finally {
+            setIsSyncing(false);
+        }
+    };
 
     return (
         <>
@@ -25,6 +62,15 @@ const InvoiceTable = () => {
             <div className='p-2 md:p-6'>
                 <div className="flex justify-center items-center p-2 md:p-0">
                     <div className="bg-white relative overflow-x-auto shadow-md py-4 p-2 md:p-6 mt-6 md:mt-8">
+
+                        <button
+                            onClick={handleSyncToZoho}
+                            disabled={isSyncing}
+                            className={`${isSyncing ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-500 hover:bg-indigo-600 cursor-pointer"
+                                } text-white px-4 py-2 rounded transition`}
+                        >
+                            {isSyncing ? "Syncing..." : "Sync All to Zoho"}
+                        </button>
 
                         {/* Top Controls */}
                         <TopControls />

@@ -59,10 +59,10 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
                     {/* Logo and Toggle */}
                     <div className="pt-6 px-4 pb-2 flex justify-between items-center">
                         {expanded && (
-                            <img
-                                src="https://img.logoipsum.com/243.svg"
+                            <img                                
+                                src="/ZakDoc_Logo.JPG"
                                 alt="Logo"
-                                className="w-32 object-contain"
+                                className="w-44 object-contain"
                             />
                         )}
                         <div className="flex items-center gap-2">

@@ -78,7 +78,7 @@ const FileUpload = () => {
                 <ToastContainer />
                 <div className="bg-white shadow-xl rounded-xl p-10 w-full max-w-xl border border-gray-200 space-y-6 flex flex-col items-center text-center">
                     <h2 className="text-3xl font-bold text-indigo-500 flex items-center gap-2">
-                        <FileText size={28} /> Invoice Extractor
+                        <FileText size={28} /> Upload Your Invoice
                     </h2>
 
                     <label className="relative w-full border-2 border-dashed border-indigo-400 rounded-lg p-6 text-center flex flex-col items-center cursor-pointer hover:bg-indigo-50 transition">
