@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-const DeleteConfirmationModal = ({ openModal, setOpenModal, invoice, deleteInvoice }) => {
+const DeleteConfirmationModal = ({ openModal, setOpenModal, deleteInvoice }) => {
 
     const handleToggleModal = () => setOpenModal(!openModal);
     const handleCloseModal = () => setOpenModal(false);
@@ -58,7 +58,7 @@ const DeleteConfirmationModal = ({ openModal, setOpenModal, invoice, deleteInvoi
                             <div className="flex justify-end gap-3">
                                 <button
                                     onClick={() => {
-                                        deleteInvoice(invoice._id)
+                                        deleteInvoice()
                                         handleCloseModal();
                                     }}
                                     className="bg-red-600 cursor-pointer text-white hover:bg-red-700 transition px-5 py-2 text-sm font-medium rounded-lg"

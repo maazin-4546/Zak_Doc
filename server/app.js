@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const connectDB = require("./db/connection");
 const invoiceRoutes = require("./routes/invoiceRoutes");
+const zohoRoutes = require("./routes/zohoRoutes")
 const userRoutes = require("./routes/userRoutes")
 require("dotenv").config();
 
@@ -29,5 +30,6 @@ connectDB();
 // Routes
 app.use(invoiceRoutes);
 app.use("/user", userRoutes);
+app.use(zohoRoutes);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

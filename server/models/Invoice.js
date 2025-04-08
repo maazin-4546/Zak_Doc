@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const InvoiceSchema = new mongoose.Schema(
     {
-        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, 
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
         invoice_number: String,
         date: String,
         company_name: String,
@@ -11,6 +11,10 @@ const InvoiceSchema = new mongoose.Schema(
         total: String,
         category: String,
         isProcess: Boolean,
+        isSyncedToZoho: {
+            type: Boolean,
+            default: false,
+        },
         products: [
             {
                 product_name: String,

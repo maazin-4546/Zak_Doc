@@ -2,9 +2,6 @@ const invoiceService = require("../services/invoiceService");
 const Invoice = require("../models/Invoice");
 const mongoose = require("mongoose");
 const moment = require("moment");
-const User = require("../models/user")
-
-const { getInvoices, createInvoice, getOrCreateCustomer } = require("../services/zoho");
 
 
 const extractInvoice = async (req, res) => {
@@ -351,86 +348,6 @@ const getInvoiceCategoryCount = async (req, res) => {
 };
 
 
-// !--------------- Zoho -----------------
-
-// Controller to Fetch Invoices
-const fetchInvoices = async (req, res) => {
-    const invoices = await getInvoices();
-    if (invoices) {
-        res.json({ success: true, invoices });
-    } else {
-        res.status(500).json({ success: false, message: "Failed to fetch invoices" });
-    }
-};
-
-const formatDate = (dateString) => {
-    const parsed = new Date(dateString);
-    if (isNaN(parsed)) return null;
-    return parsed.toISOString().split("T")[0];
-};
-
-// Controller to Sync Multiple Invoices
-const addInvoices = async (req, res) => {
-    try {
-        const invoices = await Invoice.find();
-        const failedInvoices = [];
-        let successCount = 0;
-
-        for (const invoice of invoices) {
-            // Get Customer Name from User Table
-            let customerName = "Guest";
-            try {
-                const user = await User.findById(invoice.userId);
-                if (user) {
-                    customerName = `${user.firstName} ${user.lastName}`.trim();
-                }
-            } catch {
-                console.warn(`⚠️ Could not fetch user for invoice ${invoice.invoice_number}`);
-            }
-
-            // Get or Create Customer in Zoho
-            const customerId = await getOrCreateCustomer(customerName);
-            if (!customerId) {
-                failedInvoices.push(invoice.invoice_number);
-                continue;
-            }
-
-            // Format Products
-            const lineItems = (invoice.products || []).map((p) => ({
-                name: p.product_name || "Unknown Product",
-                quantity: p.quantity || 1,
-                rate: parseFloat((p.unit_amount || "0").replace(/[^0-9.]/g, "")),
-            }));
-
-            const invoicePayload = {
-                customer_id: customerId,
-                invoice_number: invoice.invoice_number,
-                date: formatDate(invoice.date),
-                line_items: lineItems,
-                tax_total: parseFloat((invoice.tax_amount || "0").replace(/[^0-9.]/g, "")),
-                total: parseFloat((invoice.total || "0").replace(/[^0-9.]/g, "")),
-            };
-
-            const result = await createInvoice(invoicePayload);
-            if (result) {
-                successCount++;
-            } else {
-                failedInvoices.push(invoice.invoice_number);
-            }
-        }
-
-        res.json({
-            success: true,
-            message: `Invoices sync complete. Success: ${successCount}, Failed: ${failedInvoices.length}`,
-            failedInvoices,
-        });
-    } catch (err) {
-        console.error("❌ Sync Error:", err);
-        res.status(500).json({ success: false, message: "Failed to sync invoices." });
-    }
-};
-
-
 
 module.exports = {
     extractInvoice,
@@ -442,6 +359,4 @@ module.exports = {
     getAmountWeeklySpending,
     getCategoryWiseSpending,
     getInvoiceCategoryCount,
-    fetchInvoices,
-    addInvoices
 };

@@ -1,14 +1,14 @@
-import { useEffect, useState, useRef, createContext } from "react";
+import { useEffect, useState, useRef, createContext, useContext } from "react";
 import axios from "axios";
 import jsPDF from "jspdf";
 import 'jspdf-autotable';
 import * as XLSX from "xlsx"
 import amiriFontBase64 from "../../fonts/AmiriBase64";
 import "../App.css"
-
 import { toast } from "react-toastify";
-
 import dayjs from "dayjs";
+
+import { DashboardContext } from "./DashboardContext";
 
 
 export const InvoiceTableContext = createContext()
@@ -27,6 +27,9 @@ export const InvoiceTableContextProvider = ({ children }) => {
     const [endDate, setEndDate] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState("All");
 
+    const [isSyncing, setIsSyncing] = useState(false);
+    const { totalSpending } = useContext(DashboardContext)
+
 
     //* API to get user specific data
     const fetchData = async (category = 'All') => {
@@ -34,7 +37,7 @@ export const InvoiceTableContextProvider = ({ children }) => {
 
         if (!token) {
             console.log("No token found in localStorage. Skipping fetchData.");
-            setInvoices([]); 
+            setInvoices([]);
             return;
         }
 
@@ -320,8 +323,62 @@ export const InvoiceTableContextProvider = ({ children }) => {
     };
 
 
+    //* Sync Invoices to Zoho 
+    const handleSyncToZoho = async () => {
+        setIsSyncing(true);
+        try {
+            const token = localStorage.getItem("token");
+            let allSuccess = true;
+
+            for (const invoice of displayedRows) {
+                const payload = {
+                    invoice_number: invoice.invoice_number,
+                    date: invoice.date,
+                    company_name: invoice.company_name,
+                    vendor_name: invoice.vendor_name,
+                    tax_amount: invoice.tax_amount,
+                    total: invoice.total,
+                    products: invoice.products?.map((product) => ({
+                        product_name: product.product_name,
+                        quantity: product.quantity,
+                        unit_amount: product.unit_amount,
+                    })),
+                    category: invoice.category,
+                };
+
+                const res = await fetch("http://localhost:5000/zoho/add-invoices", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ payload, totalSpending }),
+                });
+
+                const data = await res.json();
+
+                if (!res.ok || data.success === false) {
+                    console.error("Sync error:", data.message || "Unknown error");
+                    allSuccess = false;
+                }
+            }
+
+            if (allSuccess) {
+                toast.success("All invoices synced successfully!");
+            } else {
+                toast.error("Some invoices failed to sync.");
+            }
+        } catch (err) {
+            console.error("❌ Request failed:", err);
+            toast.error("Sync Failed");
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+
     return (
-        <InvoiceTableContext.Provider value={{ invoices, isOpen, setIsOpen, jsonData, setJsonData, handleCategoryChange, fetchFilteredInvoicesByDate, displayedRows, totalPages, startRow, handlePageChange, handleRowsPerPageChange, handleExport, tableRef, deleteInvoice, selectedCategory, searchInput, setSearchInput, rowsPerPage, currentPage, startDate, setStartDate, endDate, setEndDate }}>
+        <InvoiceTableContext.Provider value={{ invoices, isOpen, setIsOpen, jsonData, setJsonData, handleCategoryChange, fetchFilteredInvoicesByDate, displayedRows, totalPages, startRow, handlePageChange, handleRowsPerPageChange, handleExport, tableRef, deleteInvoice, selectedCategory, searchInput, setSearchInput, rowsPerPage, currentPage, startDate, setStartDate, endDate, setEndDate, handleSyncToZoho, isSyncing }}>
             {children}
         </InvoiceTableContext.Provider>
     )

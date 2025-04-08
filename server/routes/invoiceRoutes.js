@@ -10,8 +10,6 @@ const {
     getAmountWeeklySpending,
     getCategoryWiseSpending,
     getInvoiceCategoryCount,
-    fetchInvoices,
-    addInvoices
 } = require("../controllers/invoiceController");
 const authMiddleware = require("../middleware/authMiddleware")
 const multer = require("multer");
@@ -46,11 +44,7 @@ router.get("/api/categorywise-spending", authMiddleware, getCategoryWiseSpending
 
 router.get("/api/invoice-category-count", authMiddleware, getInvoiceCategoryCount);
 
-// !--------------- Zoho -----------------
 
-router.get("/zoho/fetch-invoice", fetchInvoices);
-
-router.post("/zoho/add-invoices", addInvoices);
 
 
 module.exports = router;

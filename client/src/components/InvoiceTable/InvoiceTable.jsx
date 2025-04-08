@@ -12,48 +12,14 @@ import { InvoiceTableContext } from "../../Context/InvoiceTableContext";
 import TopControls from "./TopControls";
 import BottomSection from "./BottomSection";
 
+
 const InvoiceTable = () => {
 
-    const { isOpen, setIsOpen, jsonData, setJsonData, displayedRows, tableRef, deleteInvoice } = useContext(InvoiceTableContext)
+    const { isOpen, setIsOpen, jsonData, setJsonData, displayedRows, tableRef, deleteInvoice, handleSyncToZoho, isSyncing } = useContext(InvoiceTableContext)
 
     const [openModal, setOpenModal] = useState(false);
-    const [isSyncing, setIsSyncing] = useState(false);
+    const [selectedInvoice, setSelectedInvoice] = useState(null);
 
-    const handleSyncToZoho = async () => {
-        setIsSyncing(true);
-        try {
-            for (const invoice of displayedRows) {
-                const payload = {
-                    invoice_number: invoice.invoice_number,
-                    date: invoice.date,
-                    company_name: invoice.company_name,
-                    vendor_name: invoice.vendor_name,
-                    tax_amount: invoice.tax_amount,
-                    total: invoice.total,
-                    products: invoice.products?.map((product) => ({
-                        product_name: product.product_name,
-                        quantity: product.quantity,
-                        unit_amount: product.unit_amount,
-                    })),
-                    category: invoice.category,
-                };
-
-                await fetch("http://localhost:5000/zoho/add-invoices", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(payload),
-                });
-            }
-
-            toast.success("Invoices synced successfully!");
-        } catch (err) {
-            toast.error("Sync failed. Check console.");
-        } finally {
-            setIsSyncing(false);
-        }
-    };
 
     return (
         <>
@@ -181,7 +147,10 @@ const InvoiceTable = () => {
                                                                 </button>
 
                                                                 <button
-                                                                    onClick={() => setOpenModal(true)}
+                                                                    onClick={() => {
+                                                                        setOpenModal(true)
+                                                                        setSelectedInvoice(invoice);
+                                                                    }}
                                                                     className="cursor-pointer p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-800 transition-transform hover:scale-110"
                                                                     title="Delete"
                                                                 >
@@ -192,8 +161,7 @@ const InvoiceTable = () => {
                                                                 <DeleteConfirmationModal
                                                                     openModal={openModal}
                                                                     setOpenModal={setOpenModal}
-                                                                    invoice={invoice}
-                                                                    deleteInvoice={deleteInvoice}
+                                                                    deleteInvoice={() => deleteInvoice(selectedInvoice._id)}
                                                                 />
                                                             </div>
                                                         </td>
