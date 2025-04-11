@@ -1,5 +1,4 @@
 const axios = require("axios");
-const cron = require("cron");
 const dotenv = require("dotenv");
 const qs = require("qs");
 dotenv.config();
@@ -130,7 +129,7 @@ const getOrCreateCustomer = async ({ name, email, phone, receivables }) => {
 
 const updateZohoInvoice = async (zohoInvoiceId, updatedData) => {
     try {
-        const response = await axios.put(
+        const response = await axios.patch(
             `${API_BASE_URL}/invoices/${zohoInvoiceId}`,
             updatedData,
             {
@@ -169,18 +168,11 @@ const deleteZohoInvoice = async (zohoInvoiceId) => {
 
 
 
-
-
-
-
 //* Refresh token once at app startup
 (async () => {
     await refreshZohoToken();
 })();
 
 
-//! Automatically Refresh Token Every 55 Minutes
-// const refreshJob = new cron.CronJob("0 */55 * * * *", refreshZohoToken);
-// refreshJob.start();
 
-module.exports = { refreshZohoToken, getInvoices, createInvoice, getOrCreateCustomer, updateZohoInvoice };
+module.exports = { refreshZohoToken, getInvoices, createInvoice, getOrCreateCustomer, updateZohoInvoice, deleteZohoInvoice };

@@ -1,7 +1,9 @@
-const invoiceService = require("../services/invoiceService");
+const invoiceService = require("../services/invoiceService"); //* processFile function call
 const Invoice = require("../models/Invoice");
 const mongoose = require("mongoose");
 const moment = require("moment");
+
+const { refreshZohoToken, updateZohoInvoice, deleteZohoInvoice } = require("../services/zohoService");
 
 
 const extractInvoice = async (req, res) => {
@@ -59,6 +61,28 @@ const updateInvoiceData = async (req, res) => {
         }
 
         await invoice.save();
+
+        // ✅ If already synced to Zoho, update there too
+        if (invoice.isSyncedToZoho && invoice.zohoInvoiceId) {
+            await refreshZohoToken();
+
+            const lineItems = (invoice.products || []).map((p) => ({
+                name: p.product_name || "Unnamed Product",
+                quantity: p.quantity || 1,
+                rate: parseFloat((p.unit_amount || "0").replace(/[^0-9.]/g, "")) || 0,
+            }));
+
+            const payload = {
+                customer_id: invoice.customerId, 
+                date: formatDate(invoice.createdAt),
+                due_date: formatDate(invoice.createdAt),
+                line_items: lineItems,
+                // total: parseFloat((invoice.total || "0").replace(/[^0-9.]/g, "")) || 0,
+            };
+
+            await updateZohoInvoice(invoice.zohoInvoiceId, payload);
+        }
+
         res.json({ success: true, message: "Invoice updated successfully", data: invoice });
 
     } catch (error) {
@@ -66,7 +90,6 @@ const updateInvoiceData = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
-
 
 const deleteInvoiceData = async (req, res) => {
     try {
@@ -77,16 +100,22 @@ const deleteInvoiceData = async (req, res) => {
         const invoice = await Invoice.findById(invoiceId);
         if (!invoice) return res.status(404).json({ error: "Invoice not found" });
 
-        // Delete the invoice
+        // 🧹 Delete from Zoho if already synced
+        if (invoice.isSyncedToZoho && invoice.zohoInvoiceId) {
+            await deleteZohoInvoice(invoice.zohoInvoiceId);
+        }
+
+        // 💾 Delete from MongoDB
         await Invoice.findByIdAndDelete(invoiceId);
 
         res.json({ success: true, message: "Invoice deleted successfully" });
 
     } catch (error) {
-        console.error("Error deleting invoice:", error.message);
+        console.error("❌ Error deleting invoice:", error.message);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
 
 // !--------------- Filter API's -----------------
 

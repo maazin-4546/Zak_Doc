@@ -2,7 +2,7 @@ const Invoice = require("../models/Invoice");
 const User = require("../models/user")
 const jwt = require("jsonwebtoken");
 
-const { getInvoices, createInvoice, getOrCreateCustomer, refreshZohoToken, updateZohoInvoice } = require("../services/zohoService");
+const { getInvoices, createInvoice, getOrCreateCustomer, refreshZohoToken } = require("../services/zohoService");
 
 
 // Controller to Fetch Invoices
@@ -15,6 +15,7 @@ const fetchInvoices = async (req, res) => {
     }
 };
 
+// Used to format date
 const formatDate = (date) => {
     try {
         return new Date(date).toISOString().split("T")[0];
@@ -52,11 +53,11 @@ const addInvoices = async (req, res) => {
         const email = user.email || "";
         const phone = user.phone || "";
 
-        // 5. Get or create customer in Zoho with full details
+        // 5. Get or create customer in Zoho
         const customerId = await getOrCreateCustomer({
             name: customerName,
-            email: email,
-            phone: phone,
+            email,
+            phone,
             receivables: numericTotalSpending,
         });
 
@@ -87,8 +88,12 @@ const addInvoices = async (req, res) => {
             };
 
             const result = await createInvoice(invoicePayload);
-            if (result) {
-                await Invoice.findByIdAndUpdate(invoice._id, { isSyncedToZoho: true });
+
+            if (result && result.invoice) {
+                await Invoice.findByIdAndUpdate(invoice._id, {
+                    isSyncedToZoho: true,
+                    zohoInvoiceId: result.invoice.invoice_id, // 🔐 Save Zoho ID
+                });
                 successCount++;
             } else {
                 failedInvoices.push(invoice.invoice_number);
@@ -107,45 +112,6 @@ const addInvoices = async (req, res) => {
     }
 };
 
-const updateInvoice = async (req, res) => {
-    try {
-        const token = req.headers.authorization?.split(" ")[1];
-        const { userId } = jwt.verify(token, process.env.JWT_SECRET);
-        const { invoiceId } = req.params;
-        const updatedData = req.body;
-
-        const invoice = await Invoice.findOneAndUpdate({ _id: invoiceId, userId }, updatedData, { new: true });
-        if (!invoice) return res.status(404).json({ success: false, message: "Invoice not found" });
-
-        if (invoice.isSyncedToZoho && invoice.zohoInvoiceId) {
-            await refreshZohoToken();
-
-            const lineItems = (updatedData.products || []).map(p => ({
-                name: p.product_name || "Unnamed Product",
-                quantity: p.quantity || 1,
-                rate: parseFloat((p.unit_amount || "0").replace(/[^0-9.]/g, "")) || 0,
-            }));
-
-            const zohoPayload = {
-                customer_id: invoice.customerId,
-                date: formatDate(updatedData.createdAt || invoice.createdAt),
-                due_date: formatDate(updatedData.createdAt || invoice.createdAt),
-                line_items: lineItems,
-                total: parseFloat((updatedData.total || "0").replace(/[^0-9.]/g, "")) || 0,
-            };
-
-            await updateZohoInvoice(invoice.zohoInvoiceId, zohoPayload);
-        }
-
-        res.json({ success: true, message: "Invoice updated successfully" });
-
-    } catch (err) {
-        console.error("❌ Update Error:", err);
-        res.status(500).json({ success: false, message: "Update failed" });
-    }
-};
 
 
-
-
-module.exports = { fetchInvoices, addInvoices, updateInvoice };
+module.exports = { fetchInvoices, addInvoices };

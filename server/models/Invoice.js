@@ -15,6 +15,10 @@ const InvoiceSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        zohoInvoiceId: {
+            type: String,
+            default: null,
+        },
         products: [
             {
                 product_name: String,
@@ -24,7 +28,8 @@ const InvoiceSchema = new mongoose.Schema(
         ],
     },
     { timestamps: true }
-);;
+);
+
 
 
 const Invoice = mongoose.model("Invoice", InvoiceSchema);
