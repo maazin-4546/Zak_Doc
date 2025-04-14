@@ -4,20 +4,16 @@ import { toast } from "react-toastify";
 
 const UpdateInvoiceModal = ({ jsonData, setJsonData, isOpen, onClose }) => {
 
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         try {
-            if (!jsonData || !jsonData._id) {
-                toast.error("Invoice._ID is missing");
-                return;
-            }
-
-            // Prepare data for update
             const { _id, products, ...invoiceFields } = jsonData;
 
-            const updatedData = {
+            const payload = {
                 ...invoiceFields,
+                _id: _id || "", // ensure _id is set if available
                 products: Array.isArray(products)
                     ? products.map(({ _id, product_name, quantity, unit_amount }) => ({
                         _id,
@@ -28,18 +24,13 @@ const UpdateInvoiceModal = ({ jsonData, setJsonData, isOpen, onClose }) => {
                     : [],
             };
 
-            // console.log("Sending updated data:", updatedData); 
-
-            // Send PUT request with invoice ID
-            await axios.put(`http://localhost:5000/api/invoices/${_id}`, updatedData);
-
-            toast.success("Updated Successfully");
-            onClose(); // Close modal
-
+            const response = await axios.post("http://localhost:5000/api/invoices", payload);
+            toast.success(response.data.message || "Saved Successfully");
+            onClose();
 
         } catch (err) {
-            console.error("Error updating invoice:", err);
-            toast.error("Failed to update invoice");
+            console.error("Error saving invoice:", err);
+            toast.error("Failed to save invoice");
         }
     };
 
@@ -196,7 +187,7 @@ const UpdateInvoiceModal = ({ jsonData, setJsonData, isOpen, onClose }) => {
                         onClick={handleSubmit}
                         className="w-full cursor-pointer bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 rounded-lg transition duration-300"
                     >
-                        Update Invoice
+                        Save or Update Invoice
                     </button>
                 </div>
             </div>

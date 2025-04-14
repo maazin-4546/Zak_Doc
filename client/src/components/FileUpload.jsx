@@ -8,6 +8,8 @@ import { CloudUpload, Loader2, FileText } from "lucide-react";
 import "../App.css";
 import NavbarSecond from "./Navbar/NavbarSecond";
 
+
+
 const FileUpload = () => {
 
     const [file, setFile] = useState(null);

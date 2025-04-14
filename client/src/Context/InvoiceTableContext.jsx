@@ -17,7 +17,7 @@ export const InvoiceTableContextProvider = ({ children }) => {
 
     const [invoices, setInvoices] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
-    const [jsonData, setJsonData] = useState(null);
+    const [jsonData, setJsonData] = useState({});
 
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
@@ -30,7 +30,7 @@ export const InvoiceTableContextProvider = ({ children }) => {
     const [isSyncing, setIsSyncing] = useState(false);
     const { totalSpending } = useContext(DashboardContext)
 
-
+    
     //* API to get user specific data
     const fetchData = async (category = 'All') => {
         const token = localStorage.getItem("token");
@@ -375,7 +375,6 @@ export const InvoiceTableContextProvider = ({ children }) => {
             setIsSyncing(false);
         }
     };
-
 
     return (
         <InvoiceTableContext.Provider value={{ invoices, isOpen, setIsOpen, jsonData, setJsonData, handleCategoryChange, fetchFilteredInvoicesByDate, displayedRows, totalPages, startRow, handlePageChange, handleRowsPerPageChange, handleExport, tableRef, deleteInvoice, selectedCategory, searchInput, setSearchInput, rowsPerPage, currentPage, startDate, setStartDate, endDate, setEndDate, handleSyncToZoho, isSyncing }}>

@@ -25,7 +25,7 @@ const CategoryCount = () => {
     return (
         <div className="bg-gray-100 p-6 sm:p-10 md:p-12 rounded-2xl shadow-md max-w-7xl w-full mx-auto text-center transition-transform duration-300 ease-in-out mt-12 sm:mt-20 md:mt-24 mb-12 sm:mb-16 md:mb-20">
             {/* Main Container */}
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 sm:mb-6 md:mb-8">Category Count</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl text-gray-900 mb-4 sm:mb-6 md:mb-8">Category Count</h2>
 
             {/* Info Box */}
             <div className="my-6 sm:my-8 md:my-12 bg-indigo-100 p-5 sm:p-4 md:p-8 rounded-lg shadow-md max-w-2xl sm:max-w-3xl md:max-w-4xl mx-auto">

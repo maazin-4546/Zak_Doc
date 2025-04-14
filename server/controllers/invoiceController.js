@@ -21,7 +21,7 @@ const extractInvoice = async (req, res) => {
 
         res.json({ success: true, message: "Invoice data and category updated successfully!", data: extractedData });
     } catch (error) {
-        console.error("Error:", error.message);
+        console.error("Error:");
         res.status(500).json({ error: error.message });
     }
 };
@@ -40,56 +40,49 @@ const getUserSpcificInvoice = async (req, res) => {
     }
 }
 
-const updateInvoiceData = async (req, res) => {
+
+const updateOrInsertInvoiceData = async (req, res) => {
     try {
-        const { products, ...updatedFields } = req.body;
-        const { invoiceId } = req.params;
+        const { _id, products = [], ...invoiceFields } = req.body;
 
-        if (!invoiceId) return res.status(400).json({ error: "Invoice ID is required" });
+        if (!_id || _id === "undefined" || _id === "") {
+            // Create new invoice
+            const newInvoice = new Invoice({
+                ...invoiceFields,
+                products,
+            });
 
-        const invoice = await Invoice.findById(invoiceId);
-        if (!invoice) return res.status(404).json({ error: "Invoice not found" });
+            await newInvoice.save();
+            return res.json({ success: true, message: "Invoice created", data: newInvoice });
+        }
 
-        Object.assign(invoice, updatedFields);
+        // Update existing invoice
+        const invoice = await Invoice.findById(_id);
+        if (!invoice) {
+            return res.status(404).json({ error: "Invoice not found" });
+        }
+
+        Object.assign(invoice, invoiceFields);
 
         if (Array.isArray(products)) {
-            products.forEach(({ _id, ...productUpdates }) => {
-                const product = invoice.products.id(_id);
-                if (product) Object.assign(product, productUpdates);
+            products.forEach(({ _id: productId, ...updates }) => {
+                const existingProduct = invoice.products.id(productId);
+                if (existingProduct) {
+                    Object.assign(existingProduct, updates);
+                }
             });
             invoice.markModified("products");
         }
 
         await invoice.save();
-
-        // ✅ If already synced to Zoho, update there too
-        if (invoice.isSyncedToZoho && invoice.zohoInvoiceId) {
-            await refreshZohoToken();
-
-            const lineItems = (invoice.products || []).map((p) => ({
-                name: p.product_name || "Unnamed Product",
-                quantity: p.quantity || 1,
-                rate: parseFloat((p.unit_amount || "0").replace(/[^0-9.]/g, "")) || 0,
-            }));
-
-            const payload = {
-                customer_id: invoice.customerId, 
-                date: formatDate(invoice.createdAt),
-                due_date: formatDate(invoice.createdAt),
-                line_items: lineItems,
-                // total: parseFloat((invoice.total || "0").replace(/[^0-9.]/g, "")) || 0,
-            };
-
-            await updateZohoInvoice(invoice.zohoInvoiceId, payload);
-        }
-
-        res.json({ success: true, message: "Invoice updated successfully", data: invoice });
+        return res.json({ success: true, message: "Invoice updated", data: invoice });
 
     } catch (error) {
-        console.error("Error updating invoice:", error.message);
+        console.error("Upsert error:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
 
 const deleteInvoiceData = async (req, res) => {
     try {
@@ -379,8 +372,7 @@ const getInvoiceCategoryCount = async (req, res) => {
 
 
 module.exports = {
-    extractInvoice,
-    updateInvoiceData,
+    extractInvoice,    
     getInvoiceDataFromCategory,
     getReceiptsByDateRange,
     getUserSpcificInvoice,
@@ -388,4 +380,5 @@ module.exports = {
     getAmountWeeklySpending,
     getCategoryWiseSpending,
     getInvoiceCategoryCount,
+    updateOrInsertInvoiceData
 };

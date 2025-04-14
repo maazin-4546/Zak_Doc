@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import 'jspdf-autotable';
 import "../../App.css"
 import NavbarSecond from "../Navbar/NavbarSecond";
@@ -19,7 +19,6 @@ const InvoiceTable = () => {
 
     const [openModal, setOpenModal] = useState(false);
     const [selectedInvoice, setSelectedInvoice] = useState(null);
-
 
     return (
         <>

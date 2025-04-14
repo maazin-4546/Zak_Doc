@@ -112,6 +112,4 @@ const addInvoices = async (req, res) => {
     }
 };
 
-
-
 module.exports = { fetchInvoices, addInvoices };

@@ -50,9 +50,8 @@ const processFile = async (req) => {
       return extractedData;
     }
 
-    // Save extracted data to database with userId
-    const invoice = new Invoice({
-      userId, // Attach userId to invoice
+    return {
+      userId,
       invoice_number: extractedData.invoice_number,
       date: extractedData.date,
       company_name: extractedData.company_name,
@@ -62,11 +61,7 @@ const processFile = async (req) => {
       products: extractedData.products,
       category: extractedData.category,
       isProcess: true,
-    });
-
-    await invoice.save();
-
-    return invoice;
+    };
 
   } catch (error) {
     console.error("Error processing file:", error.message);

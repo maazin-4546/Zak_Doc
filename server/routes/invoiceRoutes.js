@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const {
-    extractInvoice,
-    updateInvoiceData,
+    extractInvoice,    
+    updateOrInsertInvoiceData,
     getInvoiceDataFromCategory,
     getReceiptsByDateRange,
     getUserSpcificInvoice,
@@ -24,7 +24,8 @@ router.post("/extract", authMiddleware, upload.single("file"), extractInvoice);
 router.get("/api/user-invoices", authMiddleware, getUserSpcificInvoice);
 
 // update the latest inserted data
-router.put("/api/invoices/:invoiceId", updateInvoiceData);
+router.post("/api/invoices", updateOrInsertInvoiceData);
+
 
 // delete invoice
 router.delete("/api/delete-invoice/:invoiceId", authMiddleware, deleteInvoiceData);
